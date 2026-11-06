@@ -1,14 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import {
   AlertTriangle,
-  ChevronDown,
-  Download,
   Eye,
   FlaskConical,
   FolderOpen,
   Hourglass,
   Moon,
-  Palette,
   Power,
   RefreshCw,
   Search,
@@ -19,7 +16,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { buildDemo } from "@/lib/elixia/demo";
-import { f2, fi, fm, formatRange } from "@/lib/elixia/format";
+import { f2, fi, fm, formatMetric, formatRange } from "@/lib/elixia/format";
 import {
   CHART_METRICS,
   LEGEND,
@@ -33,18 +30,20 @@ import {
   getVerdict,
   intentRead,
   siteDiagnosis,
-  sparkValues,
+  sparkPoints,
   summarize,
   toneFor,
   type ChartKey,
 } from "@/lib/elixia/metrics";
 import { filesToSnaps, isGhostAd } from "@/lib/elixia/parse";
-import { loadState, mergeSnaps, saveDurations, saveSnaps, saveTheme, setSkipDemo, toCsv } from "@/lib/elixia/storage";
+import { loadState, mergeSnaps, saveDurations, saveSnaps, saveTheme, setSkipDemo } from "@/lib/elixia/storage";
+import { downloadCsv, downloadStandalone, downloadXlsx, printPdf } from "@/lib/elixia/export-report";
 import { DEFAULT_BRAND, loadBrand, loadSkin, saveBrand, saveSkin, type Brand, type SkinId } from "@/lib/elixia/appearance";
 import type { Agg, Snap, Tone, VerdictKey } from "@/lib/elixia/types";
 import { ChartPanel } from "./chart-panel";
 import { AppearancePanel } from "./appearance-panel";
 import { Spark } from "./spark";
+import { SpendMix } from "./spend-mix";
 import { HelpMark, HelpProvider, HelpSwitch, TIP, Tip } from "./help";
 
 const btn = "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold";
@@ -66,6 +65,7 @@ function Live() {
   const [skin, setSkin] = useState<SkinId>("elixia");
   const [brand, setBrand] = useState<Brand>(DEFAULT_BRAND);
   const [lookOpen, setLookOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [booted, setBooted] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -197,17 +197,30 @@ function Live() {
     setBanner({ kind: "ok", text: "Datos limpiados. El panel está en ceros: importa el siguiente informe." });
   }
 
-  function exportCsv() {
-    if (!snaps.length) {
-      setBanner({ kind: "err", text: "No hay informes que exportar." });
-      return;
+  function exportRows() {
+    const ads = new Set(visible.map((s) => s.ad));
+    const rows = snaps.filter((s) => ads.has(s.ad));
+    if (!rows.length) {
+      setBanner({
+        kind: "err",
+        text: snaps.length
+          ? "Ningún anuncio coincide con el filtro activo. Quita la búsqueda o «solo activos» para exportar el resto."
+          : "No hay informes que exportar.",
+      });
+      return null;
     }
-    const blob = new Blob([toCsv(snaps)], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "elixia-meta-ads.csv";
-    a.click();
-    URL.revokeObjectURL(a.href);
+    return rows;
+  }
+
+  async function onExport(kind: "csv" | "xlsx" | "pdf" | "html") {
+    const rows = exportRows();
+    if (!rows) return;
+    setExportOpen(false);
+    const title = brand.name.trim() || DEFAULT_BRAND.name;
+    if (kind === "csv") downloadCsv(rows);
+    else if (kind === "xlsx") await downloadXlsx(rows);
+    else if (kind === "html") downloadStandalone(rows, title);
+    else if (!printPdf(rows, title)) setBanner({ kind: "err", text: "El navegador bloqueó la ventana para guardar el PDF." });
   }
 
   return (
@@ -232,16 +245,26 @@ function Live() {
         <div className="flex flex-wrap gap-2">
           <HelpSwitch />
           <button type="button" className={btnGhost} aria-expanded={lookOpen} onClick={() => setLookOpen((v) => !v)}>
-            <Palette className="size-4" />
-            <span className="hidden sm:inline">Apariencia</span>
+            <CloseMorph open={lookOpen} />
+            <span className="hidden sm:inline">{lookOpen ? "Cerrar" : "Apariencia"}</span>
           </button>
           <button type="button" className={btnGhost} onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))} aria-label={theme === "dark" ? "Tema claro" : "Tema oscuro"}>
             {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </button>
-          <button type="button" className={btnGhost} onClick={exportCsv}>
-            <Download className="size-4" />
-            <span className="hidden sm:inline">Exportar CSV</span>
-          </button>
+          <div className="relative">
+            <button type="button" className={btnGhost} aria-expanded={exportOpen} onClick={() => setExportOpen((v) => !v)}>
+              <CloseMorph open={exportOpen} />
+              <span className="hidden sm:inline">Exportar</span>
+            </button>
+            {exportOpen && (
+              <div className="absolute right-0 z-30 mt-1 w-52 rounded-xl border border-line bg-surface p-1 shadow-sm">
+                <button type="button" className="flex min-h-11 w-full items-center rounded-lg px-3 text-left text-sm font-semibold hover:bg-soft" onClick={() => void onExport("xlsx")}>Excel (.xlsx)</button>
+                <button type="button" className="flex min-h-11 w-full items-center rounded-lg px-3 text-left text-sm font-semibold hover:bg-soft" onClick={() => void onExport("csv")}>CSV</button>
+                <button type="button" className="flex min-h-11 w-full items-center rounded-lg px-3 text-left text-sm font-semibold hover:bg-soft" onClick={() => void onExport("pdf")}>PDF para imprimir</button>
+                <button type="button" className="flex min-h-11 w-full items-center rounded-lg px-3 text-left text-sm font-semibold hover:bg-soft" onClick={() => void onExport("html")}>HTML para compartir</button>
+              </div>
+            )}
+          </div>
           <button type="button" className={btnGhost} onClick={clearAll}>
             <Trash2 className="size-4" />
             Limpiar
@@ -263,13 +286,13 @@ function Live() {
 
       <nav className="sticky top-0 z-20 -mx-4 mt-4 flex gap-2 overflow-x-auto border-b border-line bg-canvas/95 px-4 py-2 backdrop-blur">
         <Tip text={TIP.navCuenta}>
-          <a className={navLink} href="#cuenta">01 Cuenta</a>
+          <a className={navLink} href="#cuenta">Cuenta</a>
         </Tip>
         <Tip text={TIP.navCreativos}>
-          <a className={navLink} href="#creativos">02 Creativos</a>
+          <a className={navLink} href="#creativos">Creativos</a>
         </Tip>
         <Tip text={TIP.navSitio}>
-          <a className={navLink} href="#sitio">03 Sitio</a>
+          <a className={navLink} href="#sitio">Sitio</a>
         </Tip>
       </nav>
 
@@ -283,7 +306,7 @@ function Live() {
               </span>
             </Tip>
           </span>
-          <ChevronDown className={clsx("size-5 shrink-0 text-muted", importOpen && "rotate-180")} />
+          {importOpen ? <CloseMorph open /> : <CloseMorph open={false} />}
         </button>
         {importOpen && (
           <div className="grid gap-3 border-t border-line p-4 md:grid-cols-2">
@@ -370,7 +393,6 @@ function Live() {
         <BlockHead
           id="cuenta"
           titleId="cuenta-title"
-          index="01 · Cuenta"
           title="Rendimiento general"
           lede="Gasto, compras, CPA y ROAS de toda la cuenta. El color usa los mismos cortes que un anuncio, calculados con sumas y no con medias de porcentajes."
         />
@@ -384,14 +406,15 @@ function Live() {
           <p className="text-sm font-bold">{accountStory.title}</p>
           <p className="mt-1 text-sm">{accountStory.body}</p>
         </div>
-        {summaries.length > 0 && <SpendMix summaries={summaries.map((s) => ({ ad: s.ad, gasto: s.agg.gasto }))} />}
+        {summaries.length > 0 && (
+          <SpendMix items={summaries.map((s) => ({ ad: s.ad, gasto: s.agg.gasto, history: s.history }))} theme={theme} skin={skin} />
+        )}
       </section>
 
       <section className="mt-10" aria-labelledby="creativos-title">
         <BlockHead
           id="creativos"
           titleId="creativos-title"
-          index="02 · Creativos"
           title="Anuncios y retención"
           lede="Lista al estilo del administrador, histórico sin columnas de más, hook, hold rate real y el veredicto de escalar o apagar."
         />
@@ -489,7 +512,6 @@ function Live() {
         <BlockHead
           id="sitio"
           titleId="sitio-title"
-          index="03 · Sitio"
           title="Salud de la landing y fricción"
           lede="Dónde se cae el clic: carga de la página, conversión de clic a compra y si el carrito muere antes o después del pago."
         />
@@ -513,12 +535,21 @@ function Live() {
   );
 }
 
-const navLink = "inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-sm font-semibold text-fg hover:bg-soft";
+const navLink = "inline-flex min-h-11 shrink-0 cursor-pointer items-center rounded-xl border border-line bg-surface px-4 text-sm font-bold text-fg shadow-sm transition-colors hover:border-accent hover:bg-accent/10 hover:shadow-md focus-visible:border-accent active:bg-accent/20";
 
-function BlockHead({ id, titleId, index, title, lede }: { id: string; titleId: string; index: string; title: string; lede: string }) {
+function CloseMorph({ open }: { open: boolean }) {
+  return (
+    <span className="relative block size-4 shrink-0" aria-hidden>
+      <span className={clsx("absolute left-0 h-0.5 w-4 rounded-full bg-current transition-transform duration-200", open ? "top-[7px] rotate-45" : "top-0.5")} />
+      <span className={clsx("absolute top-[7px] left-0 h-0.5 w-4 rounded-full bg-current transition-opacity duration-200", open ? "opacity-0" : "opacity-100")} />
+      <span className={clsx("absolute left-0 h-0.5 w-4 rounded-full bg-current transition-transform duration-200", open ? "top-[7px] -rotate-45" : "top-2.5")} />
+    </span>
+  );
+}
+
+function BlockHead({ id, titleId, title, lede }: { id: string; titleId: string; title: string; lede: string }) {
   return (
     <header id={id} className="mb-4 scroll-mt-24">
-      <p className="font-mono text-xs font-semibold tracking-widest text-accent-ink">{index}</p>
       <h2 id={titleId} className="text-xl font-extrabold tracking-tight">
         <Tip text={lede}>
           <span className="inline-flex items-center gap-1.5">
@@ -543,42 +574,6 @@ function Kpi({ label, value, hint, bar, tone, testId }: { label: string; value: 
         <p className={clsx("mt-2 font-mono text-2xl font-bold tabular-nums", toneText(tone))}>{value}</p>
       </article>
     </Tip>
-  );
-}
-
-function SpendMix({ summaries }: { summaries: { ad: string; gasto: number }[] }) {
-  const total = summaries.reduce((a, s) => a + s.gasto, 0) || 1;
-  const bars = ["bg-logo", "bg-accent", "bg-gold", "bg-brand"];
-  return (
-    <div className="mt-3 rounded-2xl border border-line bg-surface p-4">
-      <Tip text={TIP.gastoMix}>
-        <p className="flex items-center gap-1.5 text-xs font-semibold tracking-widest text-muted uppercase">
-          Dónde se va el gasto
-          <HelpMark />
-        </p>
-      </Tip>
-      <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-soft">
-        {summaries
-          .slice()
-          .sort((a, b) => b.gasto - a.gasto)
-          .map((s, i) => (
-            <div key={s.ad} className={bars[i % bars.length]} style={{ width: `${(s.gasto / total) * 100}%` }} />
-          ))}
-      </div>
-      <ul className="mt-3 grid gap-1 text-xs text-muted sm:grid-cols-2">
-        {summaries
-          .slice()
-          .sort((a, b) => b.gasto - a.gasto)
-          .map((s) => (
-            <li key={s.ad} className="flex justify-between gap-3">
-              <span className="truncate">{s.ad}</span>
-              <span className="font-mono tabular-nums text-fg">
-                {f2(s.gasto)} € · {f2((s.gasto / total) * 100)}%
-              </span>
-            </li>
-          ))}
-      </ul>
-    </div>
   );
 }
 
@@ -765,17 +760,19 @@ function AdDetail({
           const value = key === "alcance" ? fi(agg.alcance) : fm(agg[key as keyof Agg] as number | null, suffixFor(key));
           const tone = toneFor(key, typeof agg[key as keyof Agg] === "number" ? (agg[key as keyof Agg] as number) : null);
           return (
-            <Tip key={key} text={sparkTip(key)} block>
-              <article className={clsx("h-full rounded-2xl border px-3 py-3", tonePanel(tone))}>
+            <article key={key} className={clsx("h-full rounded-2xl border px-3 py-3", tonePanel(tone))}>
                 <p className="flex items-center gap-1.5 text-xs font-semibold text-muted">
-                  {def.label}
-                  {key === "alcance" ? " · suma de días" : ""}
-                  <HelpMark />
+                  <Tip text={sparkTip(key)}>
+                    <span className="inline-flex items-center gap-1.5">
+                      {def.label}
+                      {key === "alcance" ? " · suma de días" : ""}
+                      <HelpMark />
+                    </span>
+                  </Tip>
                 </p>
                 <p className="mt-1 font-mono text-xl font-bold tabular-nums">{value}</p>
-                <Spark values={sparkValues(history, key, duration)} higher={def.hi} />
+                <Spark points={sparkPoints(history, key, duration)} higher={def.hi} format={(n) => formatMetric(key, n)} />
               </article>
-            </Tip>
           );
         })}
       </div>

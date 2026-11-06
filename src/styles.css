@@ -298,3 +298,111 @@ html[data-skin="code"] .rounded-xl {
 .skin-swatch-glass { background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), #8ec5ff 45%, #1c2836); }
 .skin-swatch-luna { background: linear-gradient(#5b92c9 42%, #8fce6a); }
 .skin-swatch-code { background: repeating-linear-gradient(#123222, #123222 4px, #0b0f0c 5px); }
+.skin-swatch-trade { background: linear-gradient(180deg, #0e141b 40%, #163024 40% 70%, #3a1820); }
+.skin-swatch-market { background: linear-gradient(160deg, #f7f4ef, #ffffff 40%, #1f6f6b); }
+
+html[data-skin="trade"] {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --fg: #12171c;
+  --muted: #5c6770;
+  --line: #d5dde3;
+  --soft: #eef2f5;
+  --brand: #12171c;
+  --brand-2: #2a343c;
+  --logo: #12171c;
+  --on-logo: #f4f6f8;
+  --accent: #0f8f6a;
+  --accent-ink: #0b6b50;
+  --gold: #c4552b;
+  --gold-ink: #8a3418;
+  --ok: #0b8f4d;
+  --warn: #c4552b;
+  --bad: #d7263d;
+  color-scheme: light;
+}
+
+html[data-skin="trade"][data-theme="dark"] {
+  --bg: #0b1016;
+  --surface: #121820;
+  --fg: #e7eef4;
+  --muted: #8ea0b0;
+  --line: #243140;
+  --soft: #0e141b;
+  --brand: #e7eef4;
+  --brand-2: #8ea0b0;
+  --logo: #0b1016;
+  --on-logo: #e7eef4;
+  --accent: #26a69a;
+  --accent-ink: #9cf0e4;
+  --gold: #ef5350;
+  --gold-ink: #ffb4b0;
+  --ok: #26a69a;
+  --warn: #f0b429;
+  --bad: #ef5350;
+  color-scheme: dark;
+}
+
+html[data-skin="trade"] body {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px);
+  background-size: 100% 28px;
+  background-attachment: fixed;
+}
+
+html[data-skin="market"] {
+  --bg: #f6f3ee;
+  --surface: #fffcf8;
+  --fg: #1c1916;
+  --muted: #6d645c;
+  --line: #e6dfd6;
+  --soft: #f3eee8;
+  --brand: #1f3d3b;
+  --brand-2: #16302e;
+  --logo: #1f3d3b;
+  --on-logo: #fffcf8;
+  --accent: #1f6f6b;
+  --accent-ink: #14524f;
+  --gold: #b5813a;
+  --gold-ink: #7a5520;
+  --ok: #1b7f4e;
+  --warn: #b5813a;
+  --bad: #b42318;
+  color-scheme: light;
+}
+
+html[data-skin="market"][data-theme="dark"] {
+  --bg: #141210;
+  --surface: #1e1b18;
+  --fg: #f6f1ea;
+  --muted: #b3a89c;
+  --line: #322c27;
+  --soft: #191614;
+  --brand: #f6f1ea;
+  --brand-2: #d9cfc3;
+  --logo: #1f3d3b;
+  --on-logo: #f6f1ea;
+  --accent: #3dbeB4;
+  --accent-ink: #b7f3ee;
+  --gold: #e2b15a;
+  --gold-ink: #f6ddaa;
+  --ok: #3dbe8b;
+  --warn: #e2b15a;
+  --bad: #f0928a;
+  color-scheme: dark;
+}
+
+html[data-skin="market"] .bg-surface {
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--fg) 7%, transparent);
+  transition: box-shadow 180ms ease, border-color 180ms ease;
+}
+
+html[data-skin="market"] article:hover,
+html[data-skin="market"] .bg-surface:hover {
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--fg) 12%, transparent);
+}
+
+html[data-skin="market"] .rounded-2xl {
+  border-radius: 1.25rem;
+}

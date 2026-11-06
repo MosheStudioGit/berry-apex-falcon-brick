@@ -79,7 +79,7 @@ function Root() {
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('elixia_theme');document.documentElement.dataset.theme=t==='dark'||t==='light'?t:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var s=localStorage.getItem('elixia_skin');if(s==='glass'||s==='luna'||s==='code'||s==='elixia')document.documentElement.dataset.skin=s}catch(e){document.documentElement.dataset.theme='light'}",
+              "try{var t=localStorage.getItem('elixia_theme');document.documentElement.dataset.theme=t==='dark'||t==='light'?t:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var s=localStorage.getItem('elixia_skin');if(s==='glass'||s==='luna'||s==='code'||s==='elixia'||s==='trade'||s==='market')document.documentElement.dataset.skin=s}catch(e){document.documentElement.dataset.theme='light'}",
           }}
         />
         <HeadContent />

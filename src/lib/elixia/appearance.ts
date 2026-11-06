@@ -1,4 +1,4 @@
-export type SkinId = "elixia" | "glass" | "luna" | "code";
+export type SkinId = "elixia" | "glass" | "luna" | "code" | "trade" | "market";
 
 export type Brand = {
   name: string;
@@ -19,6 +19,8 @@ export const SKINS: { id: SkinId; label: string; note: string }[] = [
   { id: "glass", label: "Cristal", note: "Vidrio translúcido, como una ventana sobre el color." },
   { id: "luna", label: "XP", note: "Cielo y prado, con ventanas claras de día y grafito de noche." },
   { id: "code", label: "Código", note: "Entorno de trabajo: papel de día, fósforo de noche." },
+  { id: "trade", label: "Bolsa", note: "Mesa de trading: verde y rojo, cifras en monoespacio." },
+  { id: "market", label: "Market", note: "Tablero SaaS, sombras suaves y semáforo claro." },
 ];
 
 const SKIN_KEY = "elixia_skin";
@@ -27,7 +29,7 @@ const BRAND_KEY = "elixia_brand";
 export function loadSkin(): SkinId {
   try {
     const s = localStorage.getItem(SKIN_KEY);
-    if (s === "glass" || s === "luna" || s === "code" || s === "elixia") return s;
+    if (s === "glass" || s === "luna" || s === "code" || s === "elixia" || s === "trade" || s === "market") return s;
   } catch {
     /* storage no disponible */
   }

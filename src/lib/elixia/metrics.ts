@@ -1,4 +1,4 @@
-import { f2 } from "./format.ts";
+import { f2, formatRange } from "./format.ts";
 import { isGhostAd } from "./parse.ts";
 import type { AdSummary, Agg, Snap, Tone, VerdictKey, View } from "./types.ts";
 
@@ -94,9 +94,9 @@ export function nonOverlap<T extends { inicio: string; fin: string }>(rows: T[])
 }
 
 export function revenueOf(s: Snap): number | null {
-  if (s.purchaseValue != null && s.purchaseValue >= 0) return s.purchaseValue;
-  if (s.roas != null) return s.roas * s.gasto;
-  if (s.resultados === 0) return 0;
+  if (!(s.gasto > 0)) return null;
+  if (s.purchaseValue != null && s.purchaseValue > 0) return s.purchaseValue;
+  if (s.roas != null && s.roas > 0) return s.roas * s.gasto;
   return null;
 }
 
@@ -181,16 +181,11 @@ export function aggregateViews(rows: View[], skipped: number): Agg {
   let spR = 0;
   let roasAdjusted = false;
   let roasFromValue = false;
-  let blindPurchases = false;
   for (const s of rows) {
     if (s.roasAdjusted) roasAdjusted = true;
     if (s.roasOrigin === "value") roasFromValue = true;
-    if (s.purchaseValue == null && s.roas == null && s.resultados > 0) {
-      blindPurchases = true;
-      continue;
-    }
     const revenue = revenueOf(s);
-    if (revenue != null) {
+    if (revenue != null && revenue > 0 && s.gasto > 0) {
       rev += revenue;
       spR += s.gasto;
     }
@@ -215,7 +210,7 @@ export function aggregateViews(rows: View[], skipped: number): Agg {
     gasto,
     resultados,
     cpa: div(gasto, resultados),
-    roas: blindPurchases ? null : div(rev, spR),
+    roas: div(rev, spR),
     freq: latestFreq ? latestFreq.freq : null,
     ctr: div(clics, impr, 100),
     lpv: lpvRaw == null ? null : Math.min(100, lpvRaw),
@@ -432,10 +427,14 @@ export function buildTimeline(history: Snap[], key: ChartKey, dur?: number | nul
   return { days, main, range, missing };
 }
 
-export function sparkValues(history: Snap[], key: ChartKey, dur?: number | null): (number | null)[] {
+export function sparkPoints(history: Snap[], key: ChartKey, dur?: number | null): { label: string; value: number | null }[] {
   const days = history.filter((s) => dayCount(s) === 1);
   const base = days.length >= 2 ? days : history;
-  return base.map((s) => metricValue(viewOf(s, dur), key));
+  return base.map((s) => ({ label: formatRange(s.inicio, s.fin), value: metricValue(viewOf(s, dur), key) }));
+}
+
+export function sparkValues(history: Snap[], key: ChartKey, dur?: number | null): (number | null)[] {
+  return sparkPoints(history, key, dur).map((p) => p.value);
 }
 
 export function availableMetrics(history: Snap[], dur?: number | null): ChartKey[] {

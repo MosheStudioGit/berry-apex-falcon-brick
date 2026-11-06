@@ -69,7 +69,7 @@ export function AppearancePanel({
           }}
         />
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {SKINS.map((item) => (
           <button
             key={item.id}

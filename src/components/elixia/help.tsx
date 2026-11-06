@@ -70,7 +70,7 @@ export const TIP = {
   gasto: "Dinero invertido en el periodo. Los informes que se solapan en fechas no se suman dos veces.",
   compras: "Compras del sitio web. Si falta esa columna, se usa Resultados.",
   cpa: "Coste por compra: gasto ÷ compras. Verde ≤ 10 €, amarillo hasta 15 €, rojo por encima.",
-  roas: "Retorno: valor de compras ÷ gasto. Verde ≥ 2,50x, amarillo desde 1,50x, rojo por debajo. Un 350% del Excel se lee como 3,50x.",
+  roas: "Retorno: valor de compras ÷ gasto de las filas que sí traen ingreso. Un valor, un ROAS o un gasto en 0 o vacío no entra en la división ni tira la media hacia abajo. Verde ≥ 2,50x, amarillo desde 1,50x, rojo por debajo. Un 350% del Excel se lee como 3,50x.",
   alcance: "Personas alcanzadas. En el acumulado es la suma de los días, no el alcance único del periodo.",
   freq: "Veces medias que una persona vio el anuncio. Verde ≤ 1,40, amarillo hasta 1,80, rojo por encima. En el acumulado se usa el último informe, no una media.",
   ctr: "CTR de clic en el enlace, no el de todos los clics. Verde ≥ 2,50%, amarillo desde 1,50%, rojo por debajo.",

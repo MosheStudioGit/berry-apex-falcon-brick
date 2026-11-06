@@ -189,6 +189,15 @@ test("meta total row with blank name or delivery 0 is not an ad", async () => {
   assert.ok(Math.abs((account.roas ?? 0) - 5.52) < 0.01);
 });
 
+test("zero spend or zero ROAS stays out of the weighted average", () => {
+  const good = snap({ ad: "Bien", inicio: "2026-10-29", fin: "2026-10-29", gasto: 20, resultados: 2, roas: 3, roasOrigin: "column" });
+  const zero = snap({ ad: "Cero", inicio: "2026-10-29", fin: "2026-10-29", gasto: 40, resultados: 0, roas: 0, roasOrigin: "column" });
+  const empty = snap({ ad: "Vacio", inicio: "2026-10-29", fin: "2026-10-29", gasto: 0, resultados: 0, roas: null, roasOrigin: "none" });
+  const account = accountOf(summarize([good, zero, empty], {}), {});
+  assert.equal(account.gasto, 60);
+  assert.ok(Math.abs((account.roas ?? 0) - 3) < 0.001);
+});
+
 test("purchases without a ROAS column do not force account ROAS to zero", () => {
   const sold = snap({ ad: "Vende", inicio: "2026-10-29", fin: "2026-10-29", gasto: 30, resultados: 5, roas: null, roasOrigin: "none" });
   const quiet = snap({ ad: "Calla", inicio: "2026-10-29", fin: "2026-10-29", gasto: 10, resultados: 0, roas: null, roasOrigin: "none" });
