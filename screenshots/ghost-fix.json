@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Elixia · Meta Intelligence",
+      "hasCanvas": true,
+      "bodyTextLen": 3862,
+      "bodyTextHash": "2a138c02b702ea4dbd2bed9d9bbcd178f8958769df4870f2bf2bee78f9e0aaac",
+      "bodyTextPrefix": "E Elixia · Meta Intelligence Ayuda On Exportar CSV Limpiar 01 Cu",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/ghost-fix.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Elixia · Meta Intelligence",
+      "hasCanvas": true,
+      "bodyTextLen": 3849,
+      "bodyTextHash": "0e0f860b7c68425a9cff4d8a98a258af7a5806a8a4eebce98a489803b3579d89",
+      "bodyTextPrefix": "E Elixia · Meta Intelligence Ayuda On Limpiar 01 Cuenta 02 Creat",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/ghost-fix-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/ghost-fix.json"
+}

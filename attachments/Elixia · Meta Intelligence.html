@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Elixia · Meta Intelligence</title>
+<script>document.documentElement.dataset.theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";</script>
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  /* Branding Colors */
+  --elx-purple: #491B4B;
+  --elx-purple-light: #6A2B6D;
+  --elx-purple-glow: rgba(73, 27, 75, 0.15);
+  --elx-teal: #00A9A5;
+  --elx-teal-glow: rgba(0, 169, 165, 0.2);
+  --elx-gold: #E08E04;
+  --elx-gold-glow: rgba(224, 142, 4, 0.2);
+
+  /* System Light Theme */
+  --bg-gradient: linear-gradient(135deg, #F8F6F9 0%, #EFEAF2 50%, #E8E2EC 100%);
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-border: rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 10px 32px 0 rgba(73, 27, 75, 0.08), 0 2px 6px 0 rgba(0, 0, 0, 0.02);
+  --text-main: #231625;
+  --text-muted: #6B5B6E;
+  --border-subtle: rgba(73, 27, 75, 0.08);
+  --table-hover: rgba(0, 169, 165, 0.05);
+  --input-bg: rgba(255, 255, 255, 0.9);
+
+  /* Status Colors */
+  --status-green: #059669;
+  --status-green-bg: rgba(16, 185, 129, 0.12);
+  --status-green-border: rgba(16, 185, 129, 0.3);
+  --status-yellow: #D97706;
+  --status-yellow-bg: rgba(245, 158, 11, 0.12);
+  --status-yellow-border: rgba(245, 158, 11, 0.3);
+  --status-red: #DC2626;
+  --status-red-bg: rgba(239, 68, 68, 0.12);
+  --status-red-border: rgba(239, 68, 68, 0.3);
+  --status-gray: #6B7280;
+  --status-gray-bg: rgba(107, 114, 128, 0.1);
+  --status-gray-border: rgba(107, 114, 128, 0.2);
+
+  --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+
+[data-theme="dark"] {
+  --bg-gradient: linear-gradient(135deg, #140E18 0%, #1D1322 50%, #150F1A 100%);
+  --card-bg: rgba(31, 21, 34, 0.8);
+  --card-border: rgba(217, 168, 220, 0.12);
+  --glass-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.35);
+  --text-main: #F4EFF6;
+  --text-muted: #A89AAA;
+  --border-subtle: rgba(217, 168, 220, 0.1);
+  --table-hover: rgba(0, 169, 165, 0.15);
+  --input-bg: rgba(20, 14, 24, 0.6);
+
+  --status-green: #34D399;
+  --status-green-bg: rgba(52, 211, 153, 0.16);
+  --status-yellow: #FBBF24;
+  --status-yellow-bg: rgba(251, 191, 36, 0.16);
+  --status-red: #F87171;
+  --status-red-bg: rgba(248, 113, 113, 0.16);
+}
+
+*, *::before, *::after { box-sizing: inherit; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 18px 60px;
+}
+
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-logo {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--elx-purple) 0%, var(--elx-purple-light) 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.3rem;
+  box-shadow: 0 4px 16px var(--elx-purple-glow);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.brand-text h1 {
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+
+.brand-text .tagline {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 2px 0 0 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--elx-purple) 0%, var(--elx-purple-light) 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-family: var(--font-main);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px var(--elx-purple-glow);
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px var(--elx-purple-glow);
+}
+
+.btn-secondary {
+  background: var(--input-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+  box-shadow: none;
+}
+
+.btn-secondary:hover {
+  background: var(--card-bg);
+  border-color: var(--elx-teal);
+  color: var(--elx-teal);
+}
+
+.glass-panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 18px;
+  padding: 22px;
+  margin-bottom: 24px;
+}
+
+/* SECTION 1: Dropzone */
+.dropzone {
+  border: 2px dashed var(--elx-teal);
+  border-radius: 16px;
+  padding: 26px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(0, 169, 165, 0.02);
+  transition: all 0.25s ease;
+}
+
+.dropzone:hover, .dropzone.active {
+  background: var(--elx-teal-glow);
+  border-color: var(--elx-teal);
+}
+
+.dropzone-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 10px;
+  background: rgba(0, 169, 165, 0.12);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--elx-teal);
+}
+
+/* SECTION 2: Global KPIs */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--elx-purple);
+}
+.kpi-card.teal::before { background: var(--elx-teal); }
+.kpi-card.gold::before { background: var(--elx-gold); }
+.kpi-card.green::before { background: var(--status-green); }
+
+.kpi-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.kpi-value {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+}
+
+/* SECTION 3: Meta Ads-like List */
+.meta-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.meta-ad-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.meta-ad-item:hover {
+  border-color: var(--elx-teal);
+  background: var(--table-hover);
+}
+
+.meta-ad-item.selected {
+  background: linear-gradient(135deg, rgba(73, 27, 75, 0.08) 0%, rgba(0, 169, 165, 0.08) 100%);
+  border-color: var(--elx-teal);
+  box-shadow: 0 0 0 2px var(--elx-teal);
+}
+
+.ad-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ad-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--status-gray);
+}
+.ad-status-dot.active { background: var(--status-green); box-shadow: 0 0 8px var(--status-green); }
+
+.ad-name-text {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text-main);
+}
+
+.ad-sub-info {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.ad-meta-stats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+/* SECTION 4: 4 Selected Ad Key Cards */
+.selected-kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-box {
+  background: linear-gradient(135deg, rgba(73, 27, 75, 0.03) 0%, rgba(0, 169, 165, 0.03) 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 18px 20px;
+  text-align: center;
+}
+
+.stat-box h4 {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.stat-box .val {
+  font-size: 1.6rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--elx-purple);
+}
+
+[data-theme="dark"] .stat-box .val { color: #D9A8DC; }
+
+/* SECTION 5 & 6: Data Table & Sparklines Grid */
+.table-responsive {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--input-bg);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+th, td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+th {
+  background: rgba(73, 27, 75, 0.05);
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+}
+
+th:first-child, td:first-child { text-align: left; }
+
+.spark-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.spark-card {
+  background: var(--input-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.spark-card .title {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.spark-card .num {
+  font-size: 1.3rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  margin: 4px 0 8px;
+}
+
+.sparkline-svg { display: block; width: 100%; height: 32px; }
+
+/* SECTION 7: Chart & Verdict */
+.chart-wrapper {
+  position: relative;
+  height: 340px;
+  width: 100%;
+}
+
+.badge-verdict {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.badge-verdict.esc { color: var(--status-green); background: var(--status-green-bg); }
+.badge-verdict.var { color: var(--status-yellow); background: var(--status-yellow-bg); }
+.badge-verdict.apa { color: var(--status-red); background: var(--status-red-bg); }
+.badge-verdict.vig, .badge-verdict.low { color: var(--status-gray); background: var(--status-gray-bg); }
+
+.pill-btn {
+  background: var(--input-bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pill-btn.active {
+  background: var(--elx-teal);
+  color: #fff;
+  border-color: var(--elx-teal);
+}
+
+.msg-banner {
+  margin-top: 12px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: none;
+}
+.msg-banner.active { display: block; background: var(--status-green-bg); color: var(--status-green); }
+.msg-banner.error { display: block; background: var(--status-red-bg); color: var(--status-red); }
+.kpi-subtext{font-size:.75rem;color:var(--text-muted);margin-top:4px}
+td.cg{background:var(--status-green-bg);color:var(--status-green);font-weight:700}
+td.cy{background:var(--status-yellow-bg);color:var(--status-yellow);font-weight:700}
+td.cr{background:var(--status-red-bg);color:var(--status-red);font-weight:700}
+td.cn{color:var(--text-muted)}
+.spark-card.cg{background:var(--status-green-bg);border-color:var(--status-green-border)}
+.spark-card.cy{background:var(--status-yellow-bg);border-color:var(--status-yellow-border)}
+.spark-card.cr{background:var(--status-red-bg);border-color:var(--status-red-border)}
+tr.acc td{font-weight:800;border-top:2px solid var(--elx-teal)}
+.legend{font-size:.85rem;color:var(--text-muted)}.legend summary{cursor:pointer;font-weight:700;color:var(--text-main)}
+[hidden]{display:none!important}
+.brand-logo{overflow:hidden;cursor:pointer}.brand-logo img{width:100%;height:100%;object-fit:cover}
+.load-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:800px){.load-grid{grid-template-columns:1fr 1fr}}
+.dropzone.folder{border-color:var(--elx-gold);cursor:default;background:rgba(224,142,4,.03)}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:.8rem;font-weight:600;color:var(--text-muted)}
+.fld input[type=text]{padding:8px 10px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--input-bg);color:var(--text-main);font:inherit}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- Header -->
+  <header class="header-bar">
+    <div class="brand-title">
+      <div class="brand-logo" id="brandLogo" title="Clic para cambiar el logo">E</div>
+      <div class="brand-text">
+        <h1 id="brandName">Elixia · Meta Intelligence</h1>
+        <p class="tagline" id="brandTag">Análisis individual y evolutivo de anuncios</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" id="btnTheme" style="padding: 10px 14px;">🌙</button>
+      <button class="btn btn-secondary" id="btnBrand" title="Personalizar logo y nombre">⚙️ Personalizar</button>
+      <button class="btn btn-secondary" id="btnExport">Exportar CSV</button>
+    </div>
+  </header>
+
+  <!-- SECCIÓN 1: Dropzone -->
+  <section class="glass-panel" id="brandPanel" hidden>
+    <h2 style="font-size:1.1rem;margin:0 0 12px;font-weight:700">Personalizar marca</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end">
+      <label class="fld">Nombre<input type="text" id="fName"></label>
+      <label class="fld">Subtítulo<input type="text" id="fTag"></label>
+      <label class="fld">Letra (si no hay logo)<input type="text" id="fLetter" maxlength="2"></label>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn btn-secondary" id="btnLogo">🖼️ Subir logo</button>
+      <button class="btn btn-secondary" id="btnLogoX">Quitar logo</button>
+      <button class="btn" id="btnBrandSave">Guardar</button>
+      <input type="file" id="logoInput" accept="image/*" hidden>
+    </div>
+  </section>
+
+  <section class="glass-panel">
+    <div class="load-grid"><div class="dropzone" id="dropzone">
+      <div class="dropzone-icon">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+      </div>
+      <h3 style="margin: 0 0 4px; font-size: 1.05rem;">Arrastra o selecciona informes de Meta Ads (.xlsx, .csv)</h3>
+      <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Archivos sueltos: se guardan por anuncio y fecha del informe.</p>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple hidden>
+    </div>
+    <div class="dropzone folder">
+      <div class="dropzone-icon" style="background:rgba(224,142,4,.12);color:var(--elx-gold)">📁</div>
+      <h3 style="margin:0 0 4px;font-size:1.05rem">Leer desde una carpeta</h3>
+      <p style="margin:0;font-size:.85rem;color:var(--text-muted)">Elige la carpeta donde guardas los informes diarios. Lee todos los .xlsx/.csv; los ya cargados se actualizan, no se duplican.</p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px">
+        <button class="btn" id="btnPick">📁 Elegir carpeta</button>
+        <button class="btn btn-secondary" id="btnReread" hidden>🔄 Releer carpeta</button>
+      </div>
+      <p id="folderStatus" style="margin:8px 0 0;font-size:.8rem;color:var(--text-muted)"></p>
+      <input type="file" id="folderInput" webkitdirectory multiple hidden>
+    </div></div>
+    <div class="msg-banner" id="msgBanner"></div>
+  </section>
+
+  <!-- SECCIÓN 2: KPIs Generales de la Cuenta -->
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Gasto Total Cuenta</div>
+      <div class="kpi-value" id="kpiSpend">0.00 €</div>
+      <div class="kpi-subtext" id="kpiCount">0 anuncios cargados</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Total Compras</div>
+      <div class="kpi-value" id="kpiSales">0</div>
+      <div class="kpi-subtext">Conversiones totales</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-label">CPA Medio Cuenta</div>
+      <div class="kpi-value" id="kpiCpa">—</div>
+      <div class="kpi-subtext">Costo por Adquisición Global</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">ROAS Medio Cuenta</div>
+      <div class="kpi-value" id="kpiRoas">—</div>
+      <div class="kpi-subtext">Retorno Ponderado</div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 3: Lista de Anuncios estilo Meta Ads -->
+  <section class="glass-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+      <h2 style="font-size: 1.1rem; margin: 0; font-weight: 700;">Lista de Anuncios (Meta Ads)</h2>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <input type="text" id="searchAd" placeholder="Buscar anuncio..." style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--input-bg); color: var(--text-main);">
+        <label style="font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+          <input type="checkbox" id="chkActiveOnly"> Solo activos
+        </label>
+      </div>
+    </div>
+
+    <div class="meta-list-container" id="metaList">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- SECCIÓN 4: 4 Cuadros de Métricas Acumuladas del Anuncio Seleccionado -->
+  <section class="selected-kpis-grid">
+    <div class="stat-box">
+      <h4>Gasto Acumulado</h4>
+      <div class="val" id="selSpend">0.00 €</div>
+    </div>
+    <div class="stat-box">
+      <h4>Pagos Iniciados / Visitas</h4>
+      <div class="val" id="selVisits">0</div>
+    </div>
+    <div class="stat-box">
+      <h4>Total de Ventas</h4>
+      <div class="val" id="selSales">0</div>
+    </div>
+    <div class="stat-box">
+      <h4>CPA Acumulado</h4>
+      <div class="val" id="selCpa">—</div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 5: Datos Completos (Tabla del Anuncio Seleccionado) -->
+  <section class="glass-panel">
+    <h2 style="font-size: 1.1rem; margin: 0 0 14px; font-weight: 700;" id="tableAdTitle">Desglose de Datos del Anuncio</h2>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha Informe</th>
+            <th>Gasto</th>
+            <th>Compras</th>
+            <th>CPA</th>
+            <th>ROAS</th>
+            <th>Frecuencia</th>
+            <th>CTR Enlace</th>
+            <th>Carga LPV</th>
+            <th>Hook Rate</th>
+            <th>T. Medio</th>
+            <th title="Suma de alcances diarios: el alcance único real no es aditivo">Alcance</th>
+          </tr>
+        </thead>
+        <tbody id="adTableBody">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 6: Tarjetas Visuales con Sparklines de Tendencia por Días -->
+  <section class="glass-panel">
+    <h2 style="font-size: 1.1rem; margin: 0 0 10px; font-weight: 700;">Tendencia de Métricas por Días</h2>
+    <div class="spark-cards-grid" id="sparkCardsGrid">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- SECCIÓN 7: Evolución Temporal Interactiva & Recomendación -->
+  <section class="glass-panel" id="sectionEvolution">
+    <h2 style="font-size: 1.1rem; margin: 0 0 14px; font-weight: 700;">Evolución Temporal Ampliada</h2>
+    
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;" id="pillsContainer">
+      <!-- Metric Pills -->
+    </div>
+
+    <div class="chart-wrapper">
+      <canvas id="chartCanvas"></canvas>
+    </div>
+    <div id="gapNote" style="margin-top:8px;font-size:.82rem;color:var(--text-muted)"></div>
+
+    <div style="margin-top: 20px; padding: 18px; border-radius: 14px; background: rgba(73, 27, 75, 0.04); border: 1px solid var(--border-subtle);">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <span id="recBadge" class="badge-verdict low">Esperando datos</span>
+        <strong style="font-size: 0.95rem;">Veredicto de Optimización</strong>
+      </div>
+      <p id="recText" style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">
+        Selecciona un anuncio para obtener el diagnóstico automático.
+      </p>
+    </div>
+  </section>
+
+  <section class="glass-panel legend"><details><summary>Leyenda del semáforo (el color de la celda indica el estado)</summary>
+    <p><b>Frecuencia:</b> verde ≤1,40 · amarillo 1,41–1,80 · rojo &gt;1,80<br>
+    <b>CTR enlace:</b> verde ≥2,50 % · amarillo 1,50–2,49 % · rojo &lt;1,50 %<br>
+    <b>Carga LPV:</b> verde ≥85 % · amarillo 70–84,9 % · rojo &lt;70 %<br>
+    <b>CPA:</b> verde ≤10 € · amarillo 10,01–15 € · rojo &gt;15 €<br>
+    <b>ROAS:</b> verde ≥2,50x · amarillo 1,50–2,49x · rojo &lt;1,50x<br>
+    <b>Hook rate:</b> verde ≥30 % · amarillo 20–29,9 % · rojo &lt;20 %<br>
+    <b>Tiempo medio:</b> verde ≥5 s · amarillo 3–4,9 s · rojo &lt;3 s<br>
+    Gris = sin dato o denominador cero (no se cuenta como 0). El acumulado se calcula con sumas, no con promedios de porcentajes, y excluye informes que se solapan en fechas.</p>
+  </details></section>
+
+</div>
+
+<script>
+// --- State & Engine ---
+const LS_KEY = "elixia_meta_snaps_v3";
+let SNAPS = [];
+let selectedAdName = null;
+let currentMetric = "ctr";
+let chartInstance = null;
+
+const $ = id => document.getElementById(id);
+const num = v => (v === null || v === undefined || v === "" || v === "-") ? null : isFinite(Number(v)) ? Number(v) : null;
+const f2 = v => v == null ? "—" : v.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function hash(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+function dstr(v) {
+  if (typeof v === "number") {
+    const d = new Date(Math.round((v - 25569) * 86400000));
+    return d.toISOString().slice(0, 10);
+  }
+  return String(v || "").slice(0, 10);
+}
+
+function toSec(v) {
+  if (v == null || v === "") return null;
+  if (typeof v === "string" && v.includes(":")) return v.split(":").map(Number).reduce((a, x) => a * 60 + x, 0);
+  return num(v);
+}
+
+const rules = {
+  freq: v => v == null ? "n" : v <= 1.40 ? "g" : v <= 1.80 ? "y" : "r",
+  ctr:  v => v == null ? "n" : v >= 2.5 ? "g" : v >= 1.5 ? "y" : "r",
+  lpv:  v => v == null ? "n" : v >= 85 ? "g" : v >= 70 ? "y" : "r",
+  cpa:  v => v == null ? "n" : v <= 10 ? "g" : v <= 15 ? "y" : "r",
+  roas: v => v == null ? "n" : v >= 2.5 ? "g" : v >= 1.5 ? "y" : "r",
+  hook: v => v == null ? "n" : v >= 30 ? "g" : v >= 20 ? "y" : "r",
+  avgT: v => v == null ? "n" : v >= 5 ? "g" : v >= 3 ? "y" : "r"
+};
+// División segura: si el denominador es 0 o falta, devuelve null (nunca 0)
+const div = (a, b, k = 1) => (a == null || !b || !isFinite(a / b)) ? null : a / b * k;
+const METRICS_DEF = {
+  ctr:  { label: "CTR Enlace (%)", key: "ctr", thresholds: [1.5, 2.5], hi: true },
+  freq: { label: "Frecuencia", key: "freq", thresholds: [1.4, 1.8], hi: false },
+  cpa:  { label: "CPA (€)", key: "cpa", thresholds: [10, 15], hi: false },
+  roas: { label: "ROAS (x)", key: "roas", thresholds: [1.5, 2.5], hi: true },
+  lpv:  { label: "Tasa Carga LPV (%)", key: "lpv", thresholds: [70, 85], hi: true },
+  hook: { label: "Hook Rate (%)", key: "hook", thresholds: [20, 30], hi: true },
+  avgT: { label: "Tiempo Medio (s)", key: "avgT", thresholds: [3, 5], hi: true },
+  gasto:{ label: "Gasto (€)", key: "gasto" },
+  alcance: { label: "Alcance", key: "alcance" },
+  resultados: { label: "Compras", key: "resultados" }
+};
+
+const TOTAL_KEY = "__TOTAL__";
+
+function getVerdict(s) {
+  const ok = s.resultados > 0;
+  const cpaOk = s.cpa != null && s.cpa <= 10;
+  if (s.gasto < 3) return { k: "low", t: "Muestra baja", why: "Ha gastado menos de 3 €: los datos aún no son fiables." };
+  if (ok && (s.roas >= 2.5 || cpaOk) && s.freq <= 1.8 && (s.lpv == null || s.lpv >= 70)) return { k: "esc", t: "Escalar 🚀", why: "CPA/ROAS en rango óptimo. Aumenta presupuesto gradualmente (+20-30%)." };
+  if (s.ctr >= 2.5 && (!ok || !cpaOk)) return { k: "var", t: "Variantes 🎨", why: "Gran atracción de clics pero baja conversión final. Revisa la landing u oferta." };
+  if (ok && s.roas >= 1.5) return { k: "var", t: "Variantes 🎨", why: "Rentabilidad justa. Prueba nuevos ganchos creativos." };
+  if ((!ok && s.gasto >= 15) || (s.ctr != null && s.ctr < 1.5 && s.gasto >= 5) || (ok && s.roas < 1.5 && s.gasto >= 15) || (s.freq > 1.8 && (s.cpa == null || s.cpa > 15))) return { k: "apa", t: "Apagar 🛑", why: "Fatiga publicitaria o alto gasto sin retorno." };
+  return { k: "vig", t: "Vigilar 👁️", why: "Acumulando datos antes de decidir." };
+}
+
+// --- Data Parsing ---
+function pick(row, key) {
+  const k = Object.keys(row).find(x => x.toLowerCase().startsWith(key.toLowerCase()));
+  return k === undefined ? undefined : row[k];
+}
+function findKey(r, fn) {
+  const k = Object.keys(r).find(x => fn(x.toLowerCase()));
+  return k === undefined ? undefined : r[k];
+}
+
+function parseRows(rows) {
+  const out = [];
+  for (const r of rows) {
+    const nameRaw = pick(r, "Nombre del anuncio");
+    const name = nameRaw ? String(nameRaw).trim() : TOTAL_KEY;
+    const inicio = dstr(pick(r, "Inicio del informe"));
+    const fin = dstr(pick(r, "Fin del informe"));
+    if (!inicio || !fin) continue;
+
+    const spend = num(pick(r, "Monto gastado")) || 0;
+    const res = num(pick(r, "Resultados"));
+    let cpa = num(pick(r, "Costo por resultados"));
+    if (cpa == null && res && spend) cpa = spend / res;
+    const estado = String(pick(r, "Entrega del anuncio") || "").toLowerCase();
+
+    out.push({
+      ad: name, inicio, fin,
+      activo: estado === "active" || estado === "activo",
+      gasto: spend, resultados: res || 0, cpa,
+      roas: num(pick(r, "ROAS de compras")) || null,
+      freq: num(pick(r, "Frecuencia")),
+      ctr: num(pick(r, "CTR")),
+      lpv: num(pick(r, "Porcentaje de visitas a la p")),
+      impr: num(pick(r, "Impresiones")) || 0,
+      clics: num(pick(r, "Clics en el enlace")) || 0,
+      alcance: num(pick(r, "Alcance")),
+      cpm: num(pick(r, "CPM")),
+      plays: num(findKey(r, k => k.startsWith("reproducciones de video") && !/\d/.test(k))),
+      v3s: num(findKey(r, k => /3\s*seg|3\s*s\b/.test(k) && /reproduc|visualiz/.test(k))),
+      vis: num(pick(r, "Visitas a la página de destino")),
+      cpc: num(pick(r, "CPC")),
+      avgT: toSec(pick(r, "Tiempo promedio de reproducci")) || null
+    });
+  }
+
+  out.forEach(z => {
+    z.hook = div(z.v3s, z.impr, 100);
+    if (!z.clics) z.clics = (z.ctr != null && z.impr) ? Math.round(z.ctr * z.impr / 100) : ((z.cpc && z.gasto) ? Math.round(z.gasto / z.cpc) : 0);
+    if (z.lpv == null) { const v = div(z.vis, z.clics, 100); z.lpv = v == null ? null : Math.min(100, v); }
+    if (z.cpa == null) z.cpa = div(z.gasto, z.resultados);
+  });
+  return out;
+}
+
+const getSnapId = s => `${s.fin}_${s.inicio}_${hash(s.ad)}`;
+let STORE = "local", col = null, DBH = null;
+
+async function loadSnaps() {
+  try {
+    const d = await claude.use("db");
+    if (d) { DBH = d; col = d.collection("snaps"); SNAPS = (await col.limit(1000).get()).docs.map(x => x.data()); STORE = "db"; return; }
+  } catch (e) {}
+  try { SNAPS = JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch (e) { SNAPS = []; }
+}
+
+async function saveSnaps(newList) {
+  const map = new Map(SNAPS.map(s => [getSnapId(s), s]));
+  let nuevos = 0, actualizados = 0;
+  for (const s of newList) { const id = getSnapId(s); map.has(id) ? actualizados++ : nuevos++; map.set(id, s); }
+  SNAPS = [...map.values()];
+  if (col) await Promise.all(newList.map(s => col.doc(getSnapId(s)).set(s)));
+  else { try { localStorage.setItem(LS_KEY, JSON.stringify(SNAPS)); } catch (e) {} }
+  return { nuevos, actualizados };
+}
+
+// Elige informes sin solapar fechas (prioriza los de mayor rango) para no duplicar gasto
+const dayCount = s => Math.round((new Date(s.fin) - new Date(s.inicio)) / 864e5) + 1;
+function nonOverlap(h) {
+  const chosen = [];
+  [...h].sort((a, b) => dayCount(b) - dayCount(a) || b.fin.localeCompare(a.fin)).forEach(s => {
+    if (!chosen.some(c => s.inicio <= c.fin && c.inicio <= s.fin)) chosen.push(s);
+  });
+  return chosen;
+}
+// Acumulado con sumas ponderadas; los días con denominador 0 no aportan ni se cuentan como 0
+function aggregate(h) {
+  const c = nonOverlap(h), sum = (arr, k) => arr.reduce((a, x) => a + (x[k] || 0), 0);
+  const gasto = sum(c, "gasto"), resultados = sum(c, "resultados"), impr = sum(c, "impr");
+  let rev = 0, spR = 0;
+  c.forEach(x => { const r = x.roas > 0 ? x.roas * x.gasto : (x.resultados === 0 && x.gasto > 0 ? 0 : null); if (r != null) { rev += r; spR += x.gasto; } });
+  const hv = c.filter(x => x.v3s != null);
+  const lv = c.filter(x => x.vis != null || (x.lpv != null && x.clics));
+  const visE = lv.reduce((a, x) => a + (x.vis != null ? x.vis : x.lpv * x.clics / 100), 0);
+  const lpv = div(visE, sum(lv, "clics"), 100);
+  const t = c.filter(x => x.avgT != null && x.v3s > 0);
+  const fr = [...c].reverse().find(x => x.freq != null);
+  return { n: c.length, skipped: h.length - c.length, gasto, resultados, rev, spR, vis: Math.round(visE), alcance: sum(c, "alcance"),
+    cpa: div(gasto, resultados), roas: div(rev, spR), freq: fr ? fr.freq : null,
+    ctr: div(sum(c, "clics"), impr, 100), lpv: lpv == null ? null : Math.min(100, lpv),
+    hook: div(sum(hv, "v3s"), sum(hv, "impr"), 100), avgT: div(t.reduce((a, x) => a + x.avgT * x.v3s, 0), sum(t, "v3s")) };
+}
+
+function generateSVGSparkline(values, higherIsBetter = true) {
+  const validVals = values.filter(v => v !== null && isFinite(v));
+  if (validVals.length < 2) return '';
+  const w = 200, h = 32;
+  const min = Math.min(...validVals);
+  const max = Math.max(...validVals);
+  const range = (max - min) || 1;
+
+  const points = values.map((v, i) => {
+    if (v === null || !isFinite(v)) return null;
+    const x = (i / (values.length - 1)) * (w - 8) + 4;
+    const y = h - 4 - ((v - min) / range) * (h - 8);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).filter(Boolean);
+
+  const isUp = validVals[validVals.length - 1] >= validVals[0];
+  let color = higherIsBetter ? (isUp ? "#059669" : "#DC2626") : (isUp ? "#DC2626" : "#059669");
+
+  return `
+    <svg class="sparkline-svg" viewBox="0 0 ${w} ${h}">
+      <polyline fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" points="${points.join(' ')}" />
+    </svg>
+  `;
+}
+
+// --- Render Controller ---
+const fm = (v, s = "") => v == null ? "—" : f2(v) + s;
+const fi = v => v == null ? "—" : Math.round(v).toLocaleString("es-ES");
+const cc = (rule, txt) => `<td class="c${rule}">${txt}</td>`;
+const rowCells = x => cc(rules.cpa(x.cpa), fm(x.cpa, " €")) + cc(rules.roas(x.roas), fm(x.roas, "x")) + cc(rules.freq(x.freq), fm(x.freq))
+  + cc(rules.ctr(x.ctr), fm(x.ctr, "%")) + cc(rules.lpv(x.lpv), fm(x.lpv, "%")) + cc(rules.hook(x.hook), fm(x.hook, "%")) + cc(rules.avgT(x.avgT), fm(x.avgT, " s")) + `<td class="cn">${fi(x.alcance)}</td>`;
+
+function summaries() {
+  const by = {};
+  for (const s of SNAPS) if (s.ad !== TOTAL_KEY) (by[s.ad] = by[s.ad] || []).push(s);
+  return Object.keys(by).map(ad => {
+    const history = by[ad].sort((a, b) => (a.fin + a.inicio).localeCompare(b.fin + b.inicio));
+    return { ad, history, latest: history[history.length - 1], agg: aggregate(history) };
+  });
+}
+
+function renderUI() {
+  const only = $("chkActiveOnly").checked, q = $("searchAd").value.toLowerCase();
+  const all = summaries();
+  const G = all.reduce((a, x) => ({ g: a.g + x.agg.gasto, r: a.r + x.agg.resultados, rev: a.rev + x.agg.rev, sp: a.sp + x.agg.spR }), { g: 0, r: 0, rev: 0, sp: 0 });
+  $("kpiSpend").textContent = f2(G.g) + " €"; $("kpiSales").textContent = G.r;
+  $("kpiCpa").textContent = fm(div(G.g, G.r), " €"); $("kpiRoas").textContent = fm(div(G.rev, G.sp), "x");
+  $("kpiCount").textContent = `${all.length} anuncios registrados`;
+  const list = all.filter(x => (!only || x.latest.activo) && x.ad.toLowerCase().includes(q)).sort((a, b) => b.agg.gasto - a.agg.gasto);
+  if (!selectedAdName || !all.some(x => x.ad === selectedAdName)) selectedAdName = list.length ? list[0].ad : null;
+  $("metaList").innerHTML = list.length ? list.map(i => `
+    <div class="meta-ad-item ${i.ad === selectedAdName ? "selected" : ""}" data-ad="${esc(i.ad)}">
+      <div class="ad-info"><div class="ad-status-dot ${i.latest.activo ? "active" : ""}"></div>
+        <div><div class="ad-name-text">${esc(i.ad)}</div><div class="ad-sub-info">${i.history.length} informes · hasta ${i.latest.fin}</div></div></div>
+      <div class="ad-meta-stats"><div><strong>${f2(i.agg.gasto)} €</strong> <span style="font-size:.75rem;color:var(--text-muted)">Gasto</span></div>
+        <div><strong>${i.agg.resultados}</strong> <span style="font-size:.75rem;color:var(--text-muted)">Ventas</span></div></div>
+    </div>`).join("") : `<div style="text-align:center;padding:20px;color:var(--text-muted)">Aún no hay anuncios. Sube tu primer informe.</div>`;
+  renderSelectedAdDetails();
+}
+
+function selectAd(n) { selectedAdName = n; renderUI(); }
+
+function renderSelectedAdDetails() {
+  const it = summaries().find(x => x.ad === selectedAdName);
+  if (!it) return;
+  const { history, agg } = it;
+  $("selSpend").textContent = f2(agg.gasto) + " €"; $("selVisits").textContent = agg.vis || "—";
+  $("selSales").textContent = agg.resultados; $("selCpa").textContent = fm(agg.cpa, " €");
+  $("tableAdTitle").textContent = `Desglose histórico: ${selectedAdName}`;
+  $("adTableBody").innerHTML = history.map(x => `<tr><td style="text-align:left;font-weight:600">${x.inicio} → ${x.fin}</td><td>${f2(x.gasto)} €</td><td><strong>${x.resultados}</strong></td>${rowCells(x)}</tr>`).join("")
+    + `<tr class="acc"><td style="text-align:left">Acumulado (${agg.n} informes${agg.skipped ? `, ${agg.skipped} solapados excluidos` : ""})</td><td>${f2(agg.gasto)} €</td><td>${agg.resultados}</td>${rowCells(agg)}</tr>`;
+  const ml = [["CTR Enlace (%)", "ctr", true], ["CPA (€)", "cpa", false], ["ROAS (x)", "roas", true], ["Frecuencia", "freq", false], ["Carga LPV (%)", "lpv", true], ["Hook Rate (%)", "hook", true], ["Tiempo medio (s)", "avgT", true], ["Alcance (suma diaria)", "alcance", true]];
+  const hd = history.filter(s => dayCount(s) === 1), base = hd.length >= 2 ? hd : history;
+  $("sparkCardsGrid").innerHTML = ml.map(([name, k, hi]) => {
+    const svg = generateSVGSparkline(base.map(h => h[k]), hi);
+    const rule = rules[k] ? rules[k](agg[k]) : "n";
+    return `<div class="spark-card c${rule}"><div class="title">${name}${k === "alcance" ? "" : " · acum."}</div><div class="num">${k === "alcance" ? fi(agg[k]) : fm(agg[k])}</div>${svg || '<div style="height:32px;font-size:.75rem;color:var(--text-muted);display:flex;align-items:center">Datos insuficientes</div>'}</div>`;
+  }).join("");
+  renderChartAndVerdict(history, agg);
+}
+
+function renderChartAndVerdict(history, agg) {
+  const avail = Object.keys(METRICS_DEF).filter(m => history.some(s => s[METRICS_DEF[m].key] != null));
+  if (!avail.includes(currentMetric)) currentMetric = avail[0] || "ctr";
+  $("pillsContainer").innerHTML = avail.map(m => `<button class="pill-btn ${m === currentMetric ? "active" : ""}" onclick="switchMetric('${m}')">${METRICS_DEF[m].label}</button>`).join("");
+  const def = METRICS_DEF[currentMetric], k = def.key, additive = ["gasto", "resultados", "alcance"].includes(k);
+  // Línea de tiempo por días naturales: cada día aparece, tenga o no informe
+  const dmin = history.reduce((m, s) => s.inicio < m ? s.inicio : m, history[0].inicio);
+  const dmax = history.reduce((m, s) => s.fin > m ? s.fin : m, history[0].fin);
+  const days = [];
+  for (const d = new Date(dmin); d.toISOString().slice(0, 10) <= dmax; d.setUTCDate(d.getUTCDate() + 1)) days.push(d.toISOString().slice(0, 10));
+  const daily = {}; history.filter(s => dayCount(s) === 1).forEach(s => daily[s.fin] = s);
+  const ranges = history.filter(s => dayCount(s) > 1).sort((a, b) => dayCount(b) - dayCount(a));
+  const rangeOf = d => ranges.find(r => r.inicio <= d && d <= r.fin);
+  const main = days.map(d => daily[d] ? daily[d][k] : null);   // los ceros reales se dibujan como 0; sin dato = hueco
+  const rng = days.map(d => { if (daily[d]) return null; const r = rangeOf(d); return (!r || r[k] == null) ? null : (additive ? r[k] / dayCount(r) : r[k]); });
+  const missing = days.filter(d => !daily[d] && !rangeOf(d));
+  const ds = [{ label: def.label, data: main, borderColor: "#00A9A5", backgroundColor: "rgba(0,169,165,.12)", fill: true, tension: .25, borderWidth: 3, pointRadius: 5, spanGaps: false }];
+  if (rng.some(v => v != null)) ds.push({ label: additive ? "Promedio diario del informe de rango" : "Valor del informe de rango", data: rng, borderColor: "#E08E04", borderDash: [6, 4], pointRadius: 3, borderWidth: 2, spanGaps: false, fill: false });
+  if (def.thresholds) { const cs = def.hi ? ["#D97706", "#059669"] : ["#059669", "#DC2626"];
+    def.thresholds.forEach((v, i) => ds.push({ label: "Umbral " + v, data: days.map(() => v), borderColor: cs[i], borderDash: [5, 5], pointRadius: 0, borderWidth: 1, fill: false })); }
+  if (chartInstance) chartInstance.destroy();
+  const tc = document.documentElement.getAttribute("data-theme") === "dark" ? "#A89AAA" : "#6B5B6E";
+  chartInstance = new Chart($("chartCanvas"), { type: "line", data: { labels: days.map(d => d.slice(8) + "/" + d.slice(5, 7)), datasets: ds },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: tc } } }, scales: { x: { ticks: { color: tc } }, y: { ticks: { color: tc } } } } });
+  $("gapNote").textContent = missing.length ? "Días sin informe (hueco en la gráfica): " + missing.map(d => d.slice(8) + "/" + d.slice(5, 7)).join(", ") : "";
+  const v = getVerdict(agg);
+  $("recBadge").className = `badge-verdict ${v.k}`; $("recBadge").textContent = v.t;
+  $("recText").innerHTML = `<strong>${esc(selectedAdName)}:</strong> ${esc(v.why)} <span style="opacity:.8">(sobre el acumulado: ${f2(agg.gasto)} € y ${agg.resultados} compras)</span>`;
+}
+
+function switchMetric(m) { currentMetric = m; renderSelectedAdDetails(); }
+
+// --- Marca editable ---
+let BRAND = { name: "Elixia · Meta Intelligence", tag: "Análisis individual y evolutivo de anuncios", letter: "E", logo: "" };
+async function loadBrand() {
+  try {
+    if (DBH) { const s = await DBH.collection("settings").doc("brand").get(); const v = s.data(); if (v && v.name) BRAND = { ...BRAND, ...v }; }
+    else { const v = JSON.parse(localStorage.getItem("elixia_brand") || "null"); if (v) BRAND = { ...BRAND, ...v }; }
+  } catch (e) {}
+  applyBrand();
+}
+function applyBrand() {
+  $("brandName").textContent = BRAND.name; $("brandTag").textContent = BRAND.tag; document.title = BRAND.name;
+  $("brandLogo").innerHTML = BRAND.logo ? `<img src="${BRAND.logo}" alt="logo">` : esc(BRAND.letter || "E");
+}
+async function saveBrand() {
+  try { if (DBH) await DBH.collection("settings").doc("brand").set(BRAND); else localStorage.setItem("elixia_brand", JSON.stringify(BRAND)); } catch (e) {}
+  applyBrand();
+}
+function resizeLogo(file) {
+  return new Promise(res => { const img = new Image(); img.onload = () => { const c = document.createElement("canvas"); c.width = c.height = 160;
+    const x = c.getContext("2d"), r = Math.max(160 / img.width, 160 / img.height); const w = img.width * r, h = img.height * r;
+    x.drawImage(img, (160 - w) / 2, (160 - h) / 2, w, h); res(c.toDataURL("image/png")); }; img.src = URL.createObjectURL(file); });
+}
+function initBrand() {
+  const pick = () => $("logoInput").click();
+  $("brandLogo").onclick = pick; $("btnLogo").onclick = pick;
+  $("logoInput").onchange = async e => { if (e.target.files[0]) { BRAND.logo = await resizeLogo(e.target.files[0]); await saveBrand(); } e.target.value = ""; };
+  $("btnLogoX").onclick = async () => { BRAND.logo = ""; await saveBrand(); };
+  $("btnBrand").onclick = () => { $("fName").value = BRAND.name; $("fTag").value = BRAND.tag; $("fLetter").value = BRAND.letter; $("brandPanel").hidden = !$("brandPanel").hidden; };
+  $("btnBrandSave").onclick = async () => { BRAND.name = $("fName").value.trim() || BRAND.name; BRAND.tag = $("fTag").value.trim(); BRAND.letter = $("fLetter").value.trim() || "E"; await saveBrand(); $("brandPanel").hidden = true; };
+}
+
+// --- Lectura desde carpeta ---
+let dirHandle = null;
+function idb(mode, fn) {
+  return new Promise((res, rej) => { const o = indexedDB.open("elixia_fs", 1); o.onupgradeneeded = () => o.result.createObjectStore("h"); o.onerror = () => rej(o.error);
+    o.onsuccess = () => { const tx = o.result.transaction("h", mode); const r = fn(tx.objectStore("h")); tx.oncomplete = () => res(r.result); tx.onerror = () => rej(tx.error); }; });
+}
+async function collectFiles(h, out) {
+  for await (const [n, x] of h.entries()) {
+    if (x.kind === "file") { if (/\.(xlsx|xls|csv)$/i.test(n) && !n.startsWith("~$")) out.push(await x.getFile()); }
+    else await collectFiles(x, out);
+  }
+  return out;
+}
+async function readHandle(h, interactive) {
+  try {
+    let p = await h.queryPermission({ mode: "read" });
+    if (p !== "granted" && interactive) p = await h.requestPermission({ mode: "read" });
+    if (p !== "granted") return false;
+    const files = await collectFiles(h, []);
+    if (!files.length) { const b = $("msgBanner"); b.className = "msg-banner error"; b.textContent = "No encontré archivos .xlsx o .csv en esa carpeta."; return true; }
+    await processFiles(files); return true;
+  } catch (e) { return false; }
+}
+function showFolder() { $("btnReread").hidden = false; $("folderStatus").textContent = "Carpeta vinculada: " + dirHandle.name; }
+function initFolder() {
+  const inp = $("folderInput");
+  inp.onchange = () => { processFiles([...inp.files]); inp.value = ""; };
+  $("btnPick").onclick = async () => {
+    if (window.showDirectoryPicker) {
+      try { dirHandle = await showDirectoryPicker(); try { await idb("readwrite", s => s.put(dirHandle, "dir")); } catch (e) {} showFolder(); await readHandle(dirHandle, true); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    inp.click();
+  };
+  $("btnReread").onclick = () => dirHandle && readHandle(dirHandle, true);
+  (async () => { if (!window.showDirectoryPicker) return;
+    try { const h = await idb("readonly", s => s.get("dir")); if (h) { dirHandle = h; showFolder(); await readHandle(h, false); } } catch (e) {} })();
+}
+
+// --- File Handling & Init ---
+async function processFiles(files) {
+  const banner = $("msgBanner");
+  banner.className = "msg-banner active";
+  banner.textContent = "Procesando informes...";
+
+  let nuevos = 0, actualizados = 0;
+  for (const file of files.filter(f => /\.(xlsx|xls|csv)$/i.test(f.name) && !f.name.startsWith("~$"))) {
+    try {
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: "array" });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
+      const parsed = parseRows(rows);
+      if (parsed.length) {
+        const res = await saveSnaps(parsed);
+        nuevos += res.nuevos;
+        actualizados += res.actualizados;
+      }
+    } catch (e) {}
+  }
+  banner.className = "msg-banner active";
+  banner.textContent = `✅ Carga completada: ${nuevos} registros nuevos, ${actualizados} actualizados. ${STORE === "db" ? "Guardado en la base de datos de la app." : "⚠️ Modo local: solo en este navegador."}`;
+  renderUI();
+}
+
+window.onload = async () => {
+  await loadSnaps();
+  await loadBrand(); initBrand(); initFolder();
+
+  const dropzone = $("dropzone");
+  const fileInput = $("fileInput");
+  dropzone.onclick = () => fileInput.click();
+  fileInput.onchange = () => { if (fileInput.files.length) processFiles([...fileInput.files]); fileInput.value = ""; };
+
+  ["dragover", "dragenter"].forEach(e => dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.add("active"); }));
+  ["dragleave", "drop"].forEach(e => dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.remove("active"); }));
+  dropzone.addEventListener("drop", ev => { if (ev.dataTransfer.files.length) processFiles([...ev.dataTransfer.files]); });
+
+  $("chkActiveOnly").addEventListener("change", renderUI);
+  $("searchAd").addEventListener("input", renderUI);
+  $("metaList").addEventListener("click", e => { const el = e.target.closest("[data-ad]"); if (el) selectAd(el.dataset.ad); });
+  $("btnExport").onclick = async () => {
+    const head = ["anuncio","inicio","fin","activo","gasto","compras","cpa","roas","frecuencia","ctr","lpv","hook","tiempo_medio","impresiones","clics","alcance"];
+    const lines = [head.join(",")].concat(SNAPS.filter(s => s.ad !== TOTAL_KEY).sort((a, b) => a.ad.localeCompare(b.ad) || a.fin.localeCompare(b.fin)).map(s =>
+      [`"${s.ad.replace(/"/g, '""')}"`, s.inicio, s.fin, s.activo, s.gasto, s.resultados, s.cpa ?? "", s.roas ?? "", s.freq ?? "", s.ctr ?? "", s.lpv ?? "", s.hook ?? "", s.avgT ?? "", s.impr, s.clics, s.alcance ?? ""].join(",")));
+    try { const d = await claude.use("downloads"); if (d) await d.save({ filename: "seguimiento-meta-ads.csv", data: lines.join("\n") }); } catch (e) {}
+  };
+
+  $("btnTheme").onclick = () => {
+    const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    renderSelectedAdDetails();
+  };
+
+  renderUI();
+};
+</script>
+</body>
+</html>

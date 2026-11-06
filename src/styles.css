@@ -1,0 +1,300 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-soft: var(--soft);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-logo: var(--logo);
+  --color-on-logo: var(--on-logo);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-gold: var(--gold);
+  --color-gold-ink: var(--gold-ink);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+}
+
+:root {
+  --bg: #f3f0f4;
+  --surface: #fffcfe;
+  --fg: #241428;
+  --muted: #655868;
+  --line: #e4dbe6;
+  --soft: #f6f2f7;
+  --brand: #6a2b6d;
+  --brand-2: #491b4b;
+  --logo: #491b4b;
+  --on-logo: #ffffff;
+  --accent: #00a9a5;
+  --accent-ink: #0c6e6b;
+  --gold: #e08e04;
+  --gold-ink: #8a5600;
+  --ok: #047857;
+  --warn: #b45309;
+  --bad: #b91c1c;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #120d16;
+  --surface: #1c1420;
+  --fg: #f6f1f7;
+  --muted: #b3a3b6;
+  --line: #3a2d3e;
+  --soft: #261c2a;
+  --brand: #e4c4e6;
+  --brand-2: #d7a4db;
+  --logo: #491b4b;
+  --on-logo: #ffffff;
+  --accent: #2ed4cf;
+  --accent-ink: #7af0ec;
+  --gold: #f0b429;
+  --gold-ink: #f6c453;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Perfiles. Elixia (sin data-skin o elixia) conserva los tokens de arriba. */
+html[data-skin="glass"] {
+  --bg: #e4edf6;
+  --surface: #f8fbff;
+  --fg: #1b2633;
+  --muted: #536273;
+  --line: #d3deea;
+  --soft: #eef4fa;
+  --brand: #3c4d60;
+  --brand-2: #243446;
+  --logo: #1c2836;
+  --on-logo: #ffffff;
+  --accent: #0a84ff;
+  --accent-ink: #084e96;
+  --gold: #b5810d;
+  --gold-ink: #7a5608;
+  --ok: #0d7a52;
+  --warn: #9a6700;
+  --bad: #c42323;
+  color-scheme: light;
+}
+
+html[data-skin="glass"][data-theme="dark"] {
+  --bg: #0d141c;
+  --surface: #182230;
+  --fg: #f3f6fa;
+  --muted: #a8b6c6;
+  --line: #2c3c50;
+  --soft: #121b26;
+  --brand: #d5e4f5;
+  --brand-2: #9eb6ce;
+  --logo: #101820;
+  --on-logo: #f3f6fa;
+  --accent: #6eb6ff;
+  --accent-ink: #c5e2ff;
+  --gold: #e2b657;
+  --gold-ink: #f0d48a;
+  --ok: #3ddb9a;
+  --warn: #f0c14a;
+  --bad: #ff8b8b;
+  color-scheme: dark;
+}
+
+html[data-skin="luna"] {
+  --bg: #8ec4ef;
+  --surface: #f4f1e4;
+  --fg: #102033;
+  --muted: #3e5164;
+  --line: #9db6d0;
+  --soft: #e7f3fb;
+  --brand: #0a4fb8;
+  --brand-2: #083f96;
+  --logo: #0054e3;
+  --on-logo: #ffffff;
+  --accent: #2d8a1c;
+  --accent-ink: #14520c;
+  --gold: #c8880a;
+  --gold-ink: #7a5200;
+  --ok: #1b7a1b;
+  --warn: #a86b00;
+  --bad: #b00000;
+  color-scheme: light;
+}
+
+html[data-skin="luna"][data-theme="dark"] {
+  --bg: #102033;
+  --surface: #243246;
+  --fg: #f4f7fb;
+  --muted: #b7c4d6;
+  --line: #3c5270;
+  --soft: #1a2838;
+  --brand: #d6e4f7;
+  --brand-2: #9eb8db;
+  --logo: #1d4f9c;
+  --on-logo: #ffffff;
+  --accent: #8ed46a;
+  --accent-ink: #d4f5c4;
+  --gold: #e6c15a;
+  --gold-ink: #f3dc9a;
+  --ok: #8ed46a;
+  --warn: #e6c15a;
+  --bad: #ff9a9a;
+  color-scheme: dark;
+}
+
+html[data-skin="code"] {
+  --bg: #f6f2e8;
+  --surface: #fffdf8;
+  --fg: #1d1914;
+  --muted: #5e584e;
+  --line: #e3dacb;
+  --soft: #f3eee4;
+  --brand: #1d1914;
+  --brand-2: #3a342c;
+  --logo: #1d1914;
+  --on-logo: #f6f2e8;
+  --accent: #0b57d0;
+  --accent-ink: #0842a0;
+  --gold: #8a5a00;
+  --gold-ink: #6d4600;
+  --ok: #0d7a45;
+  --warn: #8a5a00;
+  --bad: #b42318;
+  color-scheme: light;
+}
+
+html[data-skin="code"][data-theme="dark"] {
+  --bg: #0b0f0c;
+  --surface: #101612;
+  --fg: #d8ffe4;
+  --muted: #86b898;
+  --line: #1d3326;
+  --soft: #0e1511;
+  --brand: #d8ffe4;
+  --brand-2: #86b898;
+  --logo: #0b0f0c;
+  --on-logo: #d8ffe4;
+  --accent: #5dff9a;
+  --accent-ink: #b8ffd4;
+  --gold: #e7d36a;
+  --gold-ink: #f4e7a4;
+  --ok: #5dff9a;
+  --warn: #e7d36a;
+  --bad: #ff8d8d;
+  color-scheme: dark;
+}
+
+html[data-skin="glass"] body {
+  background:
+    radial-gradient(900px 420px at 8% -10%, color-mix(in srgb, var(--accent) 32%, transparent), transparent 62%),
+    radial-gradient(720px 380px at 100% 0%, color-mix(in srgb, var(--gold) 26%, transparent), transparent 58%),
+    linear-gradient(165deg, var(--bg), var(--soft));
+  background-attachment: fixed;
+}
+
+html[data-skin="glass"] .bg-surface {
+  background-color: color-mix(in srgb, var(--surface) 68%, transparent);
+  backdrop-filter: blur(18px) saturate(1.45);
+  -webkit-backdrop-filter: blur(18px) saturate(1.45);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 50%, transparent);
+}
+
+html[data-skin="glass"] nav {
+  background-color: color-mix(in srgb, var(--surface) 62%, transparent);
+}
+
+html[data-skin="luna"] body {
+  background: linear-gradient(#3f78b8 0%, #b9def8 40%, #d4ecb0 56%, #4f8f32 100%);
+  background-attachment: fixed;
+}
+
+html[data-skin="luna"][data-theme="dark"] body {
+  background: linear-gradient(#071422 0%, #16385c 38%, #1c3a28 58%, #0c1c12 100%);
+}
+
+html[data-skin="luna"] .bg-surface {
+  background-image: linear-gradient(#ffffff, #ece9d8);
+  box-shadow: inset 0 1px 0 #ffffff;
+}
+
+html[data-skin="luna"][data-theme="dark"] .bg-surface {
+  background-image: linear-gradient(#2c3c54, #1b2838);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 16%, transparent);
+}
+
+html[data-skin="luna"] nav {
+  background-color: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+html[data-skin="code"] body {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--fg) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--fg) 7%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-attachment: fixed;
+}
+
+html[data-skin="code"] .rounded-2xl,
+html[data-skin="code"] .rounded-xl {
+  border-radius: 2px;
+}
+
+.skin-swatch {
+  display: block;
+  height: 2.25rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--line);
+}
+.skin-swatch-elixia { background: linear-gradient(135deg, #f3f0f4 20%, #491b4b 58%, #00a9a5); }
+.skin-swatch-glass { background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), #8ec5ff 45%, #1c2836); }
+.skin-swatch-luna { background: linear-gradient(#5b92c9 42%, #8fce6a); }
+.skin-swatch-code { background: repeating-linear-gradient(#123222, #123222 4px, #0b0f0c 5px); }

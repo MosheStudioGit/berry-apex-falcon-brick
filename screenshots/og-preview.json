@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Elixia · Meta Intelligence",
+      "hasCanvas": true,
+      "bodyTextLen": 5051,
+      "bodyTextHash": "83c6cb8de3a215e0e30e68335348d4b6f0d01eac85d463fe21b5c48047b128ad",
+      "bodyTextPrefix": "E Elixia · Meta Intelligence Cuenta, creativos y fricción de la ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/og-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Elixia · Meta Intelligence",
+      "hasCanvas": true,
+      "bodyTextLen": 5031,
+      "bodyTextHash": "8110fd02d6105a83d411b9876e630b0a2e8461466e526850e2d3298abf049401",
+      "bodyTextPrefix": "E Elixia · Meta Intelligence Cuenta, creativos y fricción de la ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/og-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/og-preview.json"
+}

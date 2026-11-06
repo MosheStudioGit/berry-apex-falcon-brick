@@ -1,0 +1,41 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Elixia · Meta Intelligence",
+      "hasCanvas": true,
+      "bodyTextLen": 5051,
+      "bodyTextHash": "83c6cb8de3a215e0e30e68335348d4b6f0d01eac85d463fe21b5c48047b128ad",
+      "bodyTextPrefix": "E Elixia · Meta Intelligence Cuenta, creativos y fricción de la ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Elixia · Meta Intelligence",
+      "hasCanvas": true,
+      "bodyTextLen": 5031,
+      "bodyTextHash": "8110fd02d6105a83d411b9876e630b0a2e8461466e526850e2d3298abf049401",
+      "bodyTextPrefix": "E Elixia · Meta Intelligence Cuenta, creativos y fricción de la ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [
+    "BRAND WARNING: this looks like a game/canvas app but /workspace/public/og.jpg is missing. Games and visually rich apps must ship a custom 1200x630 share card built from the app's own art — the default og.grok.me placeholder card is not acceptable for them. You are not done: open /workspace/.grok/skills/og/SKILL.md and finish the brand-asset pass.",
+    "BRAND WARNING: this looks like a game/canvas app but src/lib/og/site.json is missing \"type\": \"x:game\". X uses og:type=x:game to present the unfurl as a game card — set it in /workspace/src/lib/og/site.json per /workspace/.grok/skills/og/SKILL.md. Do not invent x:type or overload twitter:card as the game signal."
+  ],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}

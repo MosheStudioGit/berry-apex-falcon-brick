@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Elixia · Meta Intelligence",
+      "hasCanvas": true,
+      "bodyTextLen": 3950,
+      "bodyTextHash": "7b8ee409cf907d22f3d949e14d16beee642185c0873ec28ad4d3fa6d9abff119",
+      "bodyTextPrefix": "E Elixia · Meta Intelligence Ayuda On Exportar CSV Limpiar 01 Cu",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/help-smoke.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Elixia · Meta Intelligence",
+      "hasCanvas": true,
+      "bodyTextLen": 3937,
+      "bodyTextHash": "5845661b213750489c3921acba79de380685ef25d2e675c15d1ee59d87ccc01c",
+      "bodyTextPrefix": "E Elixia · Meta Intelligence Ayuda On Limpiar 01 Cuenta 02 Creat",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/help-smoke-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/help-smoke.json"
+}
