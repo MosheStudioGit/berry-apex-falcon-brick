@@ -1,4 +1,4 @@
-import { f2, formatRange } from "./format.ts";
+import { f2, fi, formatRange } from "./format.ts";
 import { isGhostAd } from "./parse.ts";
 import type { AdSummary, Agg, Snap, Tone, VerdictKey, View } from "./types.ts";
 
@@ -43,7 +43,7 @@ export const CHART_METRICS: ChartMetric[] = [
 ];
 
 export const CHART_GROUPS: { id: "ventas" | "alcance" | "video"; label: string; prefer: ChartKey; keys: ChartKey[] }[] = [
-  { id: "ventas", label: "Ventas", prefer: "roas", keys: ["gasto", "resultados", "cpa", "roas"] },
+  { id: "ventas", label: "Ventas", prefer: "gasto", keys: ["gasto", "resultados"] },
   { id: "alcance", label: "Alcance", prefer: "alcance", keys: ["alcance", "freq", "ctr"] },
   { id: "video", label: "Vídeo", prefer: "hook", keys: ["hook", "hold", "avgT"] },
 ];
@@ -102,8 +102,11 @@ export function revenueOf(s: Snap): number | null {
 
 export function viewOf(s: Snap, durOverride?: number | null): View {
   const dur = durOverride != null && durOverride > 0 ? durOverride : s.duration;
-  const retentionSource = s.p100 != null ? "100%" : s.p95 != null ? "95%" : s.thru != null ? "ThruPlay" : s.p75 != null ? "75%" : null;
-  const retained = s.p100 ?? s.p95 ?? s.thru ?? s.p75 ?? null;
+  const p50 = s.p50 ?? null;
+  const endCount = s.p100 ?? s.p95 ?? s.thru ?? null;
+  const retained = p50 != null ? p50 : endCount ?? s.p75 ?? null;
+  const retentionSource: View["retentionSource"] =
+    p50 != null ? "50%" : s.p100 != null ? "100%" : s.p95 != null ? "95%" : s.thru != null ? "ThruPlay" : s.p75 != null ? "75%" : null;
   const hook = div(s.v3s, s.impr, 100);
   const hold = div(retained, s.v3s, 100);
   const visUse = s.vis != null ? s.vis : s.lpv != null && s.clics > 0 ? (s.lpv * s.clics) / 100 : null;
@@ -192,6 +195,9 @@ export function aggregateViews(rows: View[], skipped: number): Agg {
   }
   const hookRows = rows.filter((r) => r.v3s != null);
   const holdRows = rows.filter((r) => r.retained != null && r.v3s != null);
+  const midRows = rows.filter((r) => (r.p50 ?? null) != null && r.v3s != null);
+  const lateRows = rows.filter((r) => r.p75 != null && r.v3s != null);
+  const endRows = rows.filter((r) => (r.p100 ?? r.p95 ?? r.thru) != null && r.v3s != null);
   const timeRows = rows.filter((r) => r.avgT != null && (r.v3s ?? 0) > 0);
   const watchRows = rows.filter((r) => r.watch != null && (r.v3s ?? 0) > 0);
   const lpvRows = rows.filter((r) => r.vis != null || (r.lpv != null && r.clics > 0));
@@ -204,6 +210,14 @@ export function aggregateViews(rows: View[], skipped: number): Agg {
   const latestFreq = [...rows].sort((a, b) => a.fin.localeCompare(b.fin)).reverse().find((r) => r.freq != null);
   const sources = [...new Set(rows.map((r) => r.retentionSource).filter((s): s is NonNullable<View["retentionSource"]> => !!s))];
   const watchWeight = watchRows.reduce((a, r) => a + (r.v3s ?? 0), 0);
+  const hold50 = div(sumNum(midRows, (r) => r.p50 ?? 0), sumNum(midRows, (r) => r.v3s ?? 0), 100);
+  const hold75 = div(sumNum(lateRows, (r) => r.p75 ?? 0), sumNum(lateRows, (r) => r.v3s ?? 0), 100);
+  const complete = div(sumNum(endRows, (r) => r.p100 ?? r.p95 ?? r.thru ?? 0), sumNum(endRows, (r) => r.v3s ?? 0), 100);
+  const retentionNote = hold50 != null
+    ? "Hold: de quienes vieron 3 s, cuántos llegan a la mitad. El 75% y el cierre al 100% van debajo y no bajan este número."
+    : sources.length
+      ? `Este informe no trae la mitad del vídeo. El hold usa ${sources.join(", ")} ÷ vistas de 3 s.`
+      : "Sin columnas de retención (50%, 75%, 100% o ThruPlay).";
   return {
     n: rows.length,
     skipped,
@@ -216,6 +230,9 @@ export function aggregateViews(rows: View[], skipped: number): Agg {
     lpv: lpvRaw == null ? null : Math.min(100, lpvRaw),
     hook: div(sumNum(hookRows, (r) => r.v3s ?? 0), sumNum(hookRows, (r) => r.impr), 100),
     hold: div(sumNum(holdRows, (r) => r.retained ?? 0), sumNum(holdRows, (r) => r.v3s ?? 0), 100),
+    hold50,
+    hold75,
+    complete,
     avgT: div(
       timeRows.reduce((a, r) => a + (r.avgT ?? 0) * (r.v3s ?? 0), 0),
       sumNum(timeRows, (r) => r.v3s ?? 0),
@@ -233,7 +250,7 @@ export function aggregateViews(rows: View[], skipped: number): Agg {
     payRate: ic.known ? div(resultados, ic.total, 100) : null,
     roasAdjusted,
     roasFromValue,
-    retentionNote: sources.length ? `Retención final: ${sources.join(", ")}` : "Sin columna de retención final (100%, 95%, ThruPlay o 75%).",
+    retentionNote,
   };
 }
 
@@ -253,6 +270,68 @@ export function summarize(snaps: Snap[], durations: Record<string, number>): AdS
     out.push({ ad, campaign, history, latest, agg: aggregate(history, durations[ad]) });
   }
   return out;
+}
+
+export type Signals = {
+  cpm: number | null;
+  reactions: number | null;
+  reactionRate: number | null;
+  quality: string | null;
+  convRank: string | null;
+  created: string | null;
+  ageDays: number | null;
+  plays3: number | null;
+  notes: string[];
+  body: string;
+};
+
+function ageDays(created: string, fin: string): number | null {
+  const a = Date.parse(`${created}T00:00:00Z`);
+  const b = Date.parse(`${fin}T00:00:00Z`);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  return Math.max(0, Math.round((b - a) / 86400000));
+}
+
+export function rankTone(label: string | null): Tone {
+  if (!label) return "n";
+  const n = label.toLowerCase();
+  if (n.includes("debajo") || n.includes("below")) return "r";
+  if (n.includes("encima") || n.includes("above")) return "g";
+  if (n.includes("promedio") || n.includes("average")) return "y";
+  return "n";
+}
+
+export function creativeSignals(history: Snap[], agg: Agg): Signals {
+  const rows = nonOverlap(history);
+  const cpm = div(agg.gasto, agg.impr, 1000);
+  const withReactions = rows.filter((r) => r.reactions != null);
+  const reactions = withReactions.length ? withReactions.reduce((a, r) => a + (r.reactions ?? 0), 0) : null;
+  const reactionImpr = withReactions.reduce((a, r) => a + r.impr, 0);
+  const reactionRate = reactions == null ? null : div(reactions, reactionImpr, 100);
+  const latest = [...rows].sort((a, b) => b.fin.localeCompare(a.fin));
+  const quality = latest.find((r) => r.quality)?.quality ?? null;
+  const convRank = latest.find((r) => r.convRank)?.convRank ?? null;
+  const created = rows.map((r) => r.created).filter((d): d is string => !!d).sort()[0] ?? null;
+  const fin = latest[0]?.fin ?? "";
+  const age = created && fin ? ageDays(created, fin) : null;
+  const playRows = rows.filter((r) => r.v3s != null);
+  const plays3 = playRows.length ? playRows.reduce((a, r) => a + (r.v3s ?? 0), 0) : null;
+
+  const bits: string[] = [];
+  if (agg.hook != null && cpm != null && agg.hook < 20 && cpm <= 8) {
+    bits.push(`El CPM es ${f2(cpm)} € y el hook no llega al 20%. El fallo está en los 3 primeros segundos, no en lo que pagas por mil impresiones.`);
+  } else if (agg.hook != null && cpm != null && agg.hook >= 30 && cpm >= 15) {
+    bits.push(`El gancho aguanta (${f2(agg.hook)}%) y el CPM ya va por ${f2(cpm)} €. El límite está en la subasta o en el público, no en el arranque del vídeo.`);
+  }
+  if (age != null && agg.freq != null && age < 14 && agg.freq <= 1.8) {
+    bits.push(`Tiene ${fi(age)} días (desde el ${formatRange(created!, created!)}) y la frecuencia es ${f2(agg.freq)}. No está fatigado: es un anuncio reciente.`);
+  } else if (age != null && agg.freq != null && age >= 21 && agg.freq > 1.8) {
+    bits.push(`Tiene ${fi(age)} días y la frecuencia ya es ${f2(agg.freq)}. La fatiga es del anuncio, no de un día malo.`);
+  }
+  if (plays3 != null && plays3 < 30 && agg.hold != null) {
+    bits.push(`El hold sale de ${fi(plays3)} vistas de 3 segundos. Por debajo de 30 el porcentaje todavía no es estable.`);
+  }
+  return { cpm, reactions, reactionRate, quality, convRank, created, ageDays: age, plays3, notes: bits, body: bits.join(" ") };
 }
 
 export function accountOf(summaries: AdSummary[], durations: Record<string, number>): Agg {
@@ -313,7 +392,7 @@ export function accountRead(a: Agg): Read {
   return {
     tone,
     title: tone === "g" ? "Cuenta en zona de escala" : tone === "y" ? "Cuenta en rentabilidad justa" : tone === "r" ? "Cuenta por debajo del corte" : "Cuenta sin lectura",
-    body: `CPA ${a.cpa == null ? "sin compras" : f2(a.cpa) + " €"} y ROAS ${a.roas == null ? "sin valor de compras" : f2(a.roas) + "x"}. Verde solo si el CPA es ≤ 10 € y el ROAS ≥ 2,50x. El ROAS de cuenta es valor de compras ÷ gasto, no una media de porcentajes.`,
+    body: tone === "n" ? "Todavía no hay CPA ni ROAS para leer la cuenta." : "El ROAS de la cuenta es valor de compras ÷ gasto de las filas que sí traen valor. No es una media de los anuncios.",
   };
 }
 
@@ -322,12 +401,12 @@ export function dropoffRead(v: number | null): Read {
     return { tone: "n", title: "Sin visitas a la landing", body: "Hace falta «Visitas a la página de destino» o el porcentaje de carga para medir la fuga entre el clic y la página." };
   }
   if (v > 30) {
-    return { tone: "r", title: "Fuga crítica", body: `Se pierde el ${f2(v)}% de los clics antes de cargar la landing. Por encima del 30% el problema es de velocidad o de URL, no del anuncio.` };
+    return { tone: "r", title: "Fuga crítica", body: "El problema es de velocidad o de URL, no del anuncio." };
   }
   if (v > 15) {
-    return { tone: "y", title: "Fuga a vigilar", body: `Se pierde el ${f2(v)}%. La banda sana es 15% o menos, la misma que una carga LPV de al menos 85%.` };
+    return { tone: "y", title: "Fuga a vigilar", body: "La banda sana es 15% o menos. Por encima, la landing empieza a tirar clics." };
   }
-  return { tone: "g", title: "La landing recoge el clic", body: `Solo se pierde el ${f2(v)}% entre el clic y la visita. La página está cargando el tráfico que paga el anuncio.` };
+  return { tone: "g", title: "La landing recoge el clic", body: "La página está cargando el tráfico que paga el anuncio." };
 }
 
 export function crRead(v: number | null): Read {
@@ -335,12 +414,12 @@ export function crRead(v: number | null): Read {
     return { tone: "n", title: "Sin clics", body: "La conversión global es compras ÷ clics en el enlace. Todavía no hay clics." };
   }
   if (v >= 1.5) {
-    return { tone: "g", title: "Por encima de la referencia", body: `${f2(v)}% de los clics terminan en compra. La banda sana de referencia es 1–1,5% y este tráfico la supera.` };
+    return { tone: "g", title: "Por encima de la referencia", body: "Supera la banda sana de 1–1,5% de clics que terminan en compra." };
   }
   if (v >= 1) {
-    return { tone: "g", title: "Dentro de la referencia", body: `${f2(v)}% de los clics compran. Está dentro de la banda sana de 1–1,5%.` };
+    return { tone: "g", title: "Dentro de la referencia", body: "Está dentro de la banda sana: 1–1,5% de los clics compran." };
   }
-  return { tone: "r", title: "Por debajo de la referencia", body: `${f2(v)}% de los clics compran. La referencia sana es 1–1,5%: el embudo no cierra lo que el anuncio trae.` };
+  return { tone: "r", title: "Por debajo de la referencia", body: "La referencia sana es 1–1,5%. El embudo no cierra lo que el anuncio trae." };
 }
 
 export function intentRead(a: Agg): Read {
@@ -360,20 +439,20 @@ export function intentRead(a: Agg): Read {
     return {
       tone: "r",
       title: "Fricción en el pago",
-      body: `El ${f2(intent)}% de los carritos inicia el pago, pero solo el ${f2(pay)}% de esos inicios se cobra. El corte está en el checkout: recargo de 2,99 € contrareembolso, costes que aparecen tarde o desconfianza en el último paso.`,
+      body: "El corte está en el checkout: recargo de 2,99 € contrareembolso, costes que aparecen tarde o desconfianza en el último paso.",
     };
   }
   if (intent < 40) {
     return {
       tone: "r",
       title: "Fricción antes del pago",
-      body: `Solo el ${f2(intent)}% de los carritos inicia el pago. No es el recargo de 2,99 €: se cae entre el carrito y el checkout (envío, formulario o precio).`,
+      body: "No es el recargo de 2,99 €: se cae entre el carrito y el checkout (envío, formulario o precio).",
     };
   }
   return {
     tone: rules.intent(intent),
     title: "La intención llega al pago",
-    body: `El ${f2(intent)}% de los carritos inicia el pago${pay != null ? ` y el ${f2(pay)}% de esos inicios compra` : ""}. No hay un corte claro ligado al contrareembolso.`,
+    body: pay != null && pay < 45 ? "Los inicios de pago no se están cobrando. Revisa el último paso del checkout." : "No hay un corte claro ligado al contrareembolso.",
   };
 }
 
@@ -451,7 +530,8 @@ export const LEGEND: { name: string; rule: string }[] = [
   { name: "CR global", rule: "compras ÷ clics en el enlace. Referencia sana 1–1,5%. Por debajo de 1% queda en rojo." },
   { name: "Hook rate", rule: "visualizaciones de 3 s ÷ impresiones. Verde ≥ 30% · amarillo 20–29,9% · rojo < 20%." },
   { name: "Hold rate", rule: "retención final (100%, si no 95%, ThruPlay o 75%) ÷ visualizaciones de 3 s. Verde ≥ 35% · amarillo 20–34,9% · rojo < 20%." },
-  { name: "Tiempo medio", rule: "verde ≥ 5 s · amarillo 3–4,9 s · rojo < 3 s. El ratio tiempo/duración usa la duración del informe o la que indiques." },
+  { name: "Tiempo medio", rule: "verde ≥ 5 s · amarillo 3–4,9 s · rojo < 3 s." },
+  { name: "Visto del vídeo", rule: "tiempo medio ÷ duración. Verde ≥ 40% · amarillo 25–39,9% · rojo < 25%. Usa la duración del informe o la que indiques." },
   { name: "Intención IC/ATC", rule: "inicios de pago ÷ añadidos al carrito. Si es alta y compras/inicios es baja, la fricción está en el pago (por ejemplo el recargo de 2,99 €). Si es baja, está antes del checkout." },
   { name: "Acumulado", rule: "sumas, no medias de porcentajes. Los informes que se solapan en fechas se excluyen para no duplicar gasto. El alcance es suma de alcances diarios, no alcance único." },
 ];

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import * as XLSX from "xlsx";
 import { buildDemo } from "./demo.ts";
-import { accountOf, aggregate, getVerdict, nonOverlap, siteDiagnosis, summarize, toneFor } from "./metrics.ts";
+import { accountOf, aggregate, creativeSignals, getVerdict, nonOverlap, siteDiagnosis, summarize, toneFor } from "./metrics.ts";
 import { bufferToSnaps, parseLooseNumber, rowsToSnaps } from "./parse.ts";
 import type { Snap } from "./types.ts";
 
@@ -17,6 +17,7 @@ const base = {
   alcance: 800,
   plays: null,
   v3s: null,
+  p50: null,
   p75: null,
   p95: null,
   p100: null,
@@ -26,6 +27,10 @@ const base = {
   duration: null,
   atc: null,
   ic: null,
+  reactions: null,
+  quality: null,
+  convRank: null,
+  created: null,
   demo: false,
 } satisfies Omit<Snap, "ad" | "inicio" | "fin" | "gasto" | "resultados" | "cpa" | "roas" | "roasAdjusted" | "roasOrigin" | "purchaseValue">;
 
@@ -204,6 +209,111 @@ test("purchases without a ROAS column do not force account ROAS to zero", () => 
   const account = accountOf(summarize([sold, quiet], {}), {});
   assert.equal(account.resultados, 5);
   assert.equal(account.roas, null);
+});
+
+test("half-video plays are the hold, and the ending stays a separate close rate", () => {
+  const rows = rowsToSnaps([
+    {
+      "Nombre del anuncio": "",
+      "Entrega del anuncio": 0,
+      "Inicio del informe": "2026-11-07",
+      "Fin del informe": "2026-11-07",
+      "Monto gastado (EUR)": 4.2,
+      Impresiones: 739,
+    },
+    {
+      "Nombre del anuncio": "combo curcuma v5",
+      "Entrega del anuncio": "active",
+      "Inicio del informe": "2026-11-07",
+      "Fin del informe": "2026-11-07",
+      "Monto gastado (EUR)": 2.55,
+      Impresiones: 448,
+      "Clics en el enlace": 17,
+      "Reproducciones de video de 3 segundos": 84,
+      "Reproducciones de video hasta el 50%": 52,
+      "Reproducciones de video hasta el 75%": 36,
+      "Reproducciones de video hasta el 100%": 27,
+      "Tiempo promedio de reproducción del video": 3,
+    },
+    {
+      "Nombre del anuncio": "poster estático",
+      "Entrega del anuncio": "active",
+      "Inicio del informe": "2026-11-07",
+      "Fin del informe": "2026-11-07",
+      "Monto gastado (EUR)": 0.01,
+      Impresiones: 5,
+    },
+  ]);
+  assert.equal(rows.length, 2);
+  const video = rows.find((r) => r.ad === "combo curcuma v5");
+  assert.ok(video);
+  assert.equal(video.p50, 52);
+  assert.equal(video.p75, 36);
+  assert.equal(video.p100, 27);
+  const agg = aggregate([video]);
+  assert.ok(Math.abs((agg.hook ?? 0) - (84 / 448) * 100) < 0.01);
+  assert.ok(Math.abs((agg.hold ?? 0) - (52 / 84) * 100) < 0.01);
+  assert.ok(Math.abs((agg.hold50 ?? 0) - (52 / 84) * 100) < 0.01);
+  assert.ok(Math.abs((agg.hold75 ?? 0) - (36 / 84) * 100) < 0.01);
+  assert.ok(Math.abs((agg.complete ?? 0) - (27 / 84) * 100) < 0.01);
+  assert.ok((agg.hold ?? 0) > (agg.complete ?? 0));
+  const still = rows.find((r) => r.ad === "poster estático");
+  assert.equal(aggregate([still!]).hook, null);
+});
+
+test("website ROAS, rankings and creative age beat the loose Meta columns", () => {
+  const rows = rowsToSnaps([
+    {
+      "Nombre del anuncio": "combo",
+      "Entrega del anuncio": "active",
+      "Inicio del informe": "2026-11-07",
+      "Fin del informe": "2026-11-07",
+      "Fecha de creación": "2026-10-31",
+      "Monto gastado (EUR)": 2.55,
+      Impresiones: 448,
+      Frecuencia: 1.11,
+      "ROAS de compras": 4,
+      "ROAS de compras en el sitio web": 2.2,
+      "Resultados (iniciales)": 9,
+      Compras: "",
+      "Valor de resultados con reglas de valor": 99,
+      "Reacciones a publicaciones": 2,
+      "Clasificación de calidad": "-",
+      "Clasificación del porcentaje de conversiones": "-",
+      "Reproducciones de video de 3 segundos": 84,
+      "Reproducciones de video hasta el 50%": 52,
+    },
+    {
+      "Nombre del anuncio": "solo general",
+      "Inicio del informe": "2026-11-07",
+      "Fin del informe": "2026-11-07",
+      "Monto gastado (EUR)": 10,
+      Impresiones: 100,
+      "ROAS de compras": 3,
+      "ROAS de compras en el sitio web": 0,
+      "Resultados (iniciales)": 8,
+    },
+  ]);
+  const combo = rows.find((r) => r.ad === "combo");
+  assert.ok(combo);
+  assert.equal(combo.roas, 2.2);
+  assert.equal(combo.resultados, 0);
+  assert.equal(combo.purchaseValue, null);
+  assert.equal(combo.reactions, 2);
+  assert.equal(combo.quality, null);
+  assert.equal(combo.convRank, null);
+  assert.equal(combo.created, "2026-10-31");
+  const signals = creativeSignals([combo], aggregate([combo]));
+  assert.ok(Math.abs((signals.cpm ?? 0) - (2.55 / 448) * 1000) < 0.01);
+  assert.equal(signals.reactions, 2);
+  assert.equal(signals.ageDays, 7);
+  assert.match(signals.body, /3 primeros segundos/);
+  assert.match(signals.body, /No está fatigado/);
+  assert.doesNotMatch(signals.body, /aún no puntúa/);
+
+  const general = rows.find((r) => r.ad === "solo general");
+  assert.equal(general?.roas, 3);
+  assert.equal(general?.resultados, 0);
 });
 
 test("demo stories land on the right verdicts", () => {

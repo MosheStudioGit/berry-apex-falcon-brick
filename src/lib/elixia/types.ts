@@ -21,6 +21,7 @@ export type Snap = {
   alcance: number | null;
   plays: number | null;
   v3s: number | null;
+  p50: number | null;
   p75: number | null;
   p95: number | null;
   p100: number | null;
@@ -30,12 +31,16 @@ export type Snap = {
   duration: number | null;
   atc: number | null;
   ic: number | null;
+  reactions: number | null;
+  quality: string | null;
+  convRank: string | null;
+  created: string | null;
   demo?: boolean;
 };
 
 export type Tone = "g" | "y" | "r" | "n";
 
-export type RetentionSource = "100%" | "95%" | "ThruPlay" | "75%" | null;
+export type RetentionSource = "50%" | "100%" | "95%" | "ThruPlay" | "75%" | null;
 
 export type View = Snap & {
   retained: number | null;
@@ -63,6 +68,9 @@ export type Agg = {
   lpv: number | null;
   hook: number | null;
   hold: number | null;
+  hold50: number | null;
+  hold75: number | null;
+  complete: number | null;
   avgT: number | null;
   watch: number | null;
   alcance: number | null;

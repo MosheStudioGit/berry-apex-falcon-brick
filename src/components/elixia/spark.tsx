@@ -1,13 +1,23 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import type { Tone } from "@/lib/elixia/types";
+
+const TONE_COLOR: Record<Tone, string> = {
+  g: "var(--ok)",
+  y: "var(--warn)",
+  r: "var(--bad)",
+  n: "var(--accent)",
+};
 
 export function Spark({
   points,
-  higher,
+  tone,
+  mark,
   format,
 }: {
   points: { label: string; value: number | null }[];
-  higher?: boolean;
+  tone: Tone;
+  mark?: number;
   format: (n: number) => string;
 }) {
   const [hot, setHot] = useState<{ i: number; x: number; y: number } | null>(null);
@@ -17,19 +27,20 @@ export function Spark({
   }
   const w = 200;
   const h = 32;
-  const min = Math.min(...valid);
-  const max = Math.max(...valid);
+  const scale = mark == null ? valid : [...valid, mark];
+  const min = Math.min(...scale);
+  const max = Math.max(...scale);
   const range = max - min || 1;
+  const yOf = (value: number) => h - 4 - ((value - min) / range) * (h - 8);
   const coords = points.map((p, i) => {
     if (p.value == null || !Number.isFinite(p.value)) return null;
     const x = (i / (points.length - 1)) * (w - 8) + 4;
-    const y = h - 4 - ((p.value - min) / range) * (h - 8);
-    return { x, y, i };
+    return { x, y: yOf(p.value), i };
   });
   const drawn = coords.filter((c): c is { x: number; y: number; i: number } => c != null);
-  const rising = valid[valid.length - 1] >= valid[0];
-  const color = higher == null ? "var(--accent)" : higher === rising ? "var(--ok)" : "var(--bad)";
+  const color = TONE_COLOR[tone];
   const tip = hot == null ? null : points[hot.i];
+  const markY = mark == null ? null : yOf(mark);
 
   return (
     <div className="relative">
@@ -37,7 +48,7 @@ export function Spark({
         viewBox={`0 0 ${w} ${h}`}
         className="h-8 w-full"
         role="img"
-        aria-label="Tendencia. Pasa el cursor para ver la fecha y el valor."
+        aria-label="Tendencia respecto a su semáforo. Pasa el cursor para ver la fecha y el valor."
         onMouseLeave={() => setHot(null)}
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
@@ -54,6 +65,7 @@ export function Spark({
           setHot(best ? { i: best.i, x: e.clientX, y: e.clientY } : null);
         }}
       >
+        {markY != null && <line x1="4" x2={w - 4} y1={markY} y2={markY} stroke="var(--muted)" strokeDasharray="3 3" strokeWidth="1" />}
         <polyline
           fill="none"
           stroke={color}

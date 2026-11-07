@@ -204,7 +204,6 @@ function DailyLine({ ad, history, theme, skin }: { ad: string; history: Snap[]; 
   return (
     <div className="mt-4 border-t border-line pt-3">
       <p className="text-sm font-bold">{ad}</p>
-      <p className="text-xs text-muted">Gasto, impresiones y compras de cada informe. La guía del cursor enseña las tres cifras.</p>
       {skin === "trade" && <Candles rows={rows} />}
       <div className="relative mt-2 h-56">
         <canvas ref={canvas} role="img" aria-label={`Evolución diaria de ${ad}`} />

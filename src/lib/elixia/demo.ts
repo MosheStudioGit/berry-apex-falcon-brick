@@ -53,6 +53,7 @@ function make(p: {
     alcance: Math.round(p.impr / Math.max(p.freq, 0.2)),
     plays: v3s,
     v3s,
+    p50: null,
     p75: null,
     p95: null,
     p100: retained,
@@ -62,6 +63,10 @@ function make(p: {
     duration: p.duration,
     atc: p.atc,
     ic: p.ic,
+    reactions: null,
+    quality: null,
+    convRank: null,
+    created: null,
     demo: true,
   };
 }

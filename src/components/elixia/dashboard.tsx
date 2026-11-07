@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import {
-  AlertTriangle,
   Eye,
   FlaskConical,
   FolderOpen,
@@ -9,6 +8,10 @@ import {
   Power,
   RefreshCw,
   Search,
+  Sparkles,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   Sun,
   Trash2,
   TrendingUp,
@@ -18,13 +21,13 @@ import clsx from "clsx";
 import { buildDemo } from "@/lib/elixia/demo";
 import { f2, fi, fm, formatMetric, formatRange } from "@/lib/elixia/format";
 import {
+  CHART_GROUPS,
   CHART_METRICS,
   LEGEND,
   SPARK_KEYS,
   accountOf,
   accountRead,
   aggregate,
-  availableMetrics,
   crRead,
   dropoffRead,
   getVerdict,
@@ -33,6 +36,8 @@ import {
   sparkPoints,
   summarize,
   toneFor,
+  creativeSignals,
+  rankTone,
   type ChartKey,
 } from "@/lib/elixia/metrics";
 import { filesToSnaps, isGhostAd } from "@/lib/elixia/parse";
@@ -70,7 +75,7 @@ function Live() {
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [activeOnly, setActiveOnly] = useState(false);
-  const [metric, setMetric] = useState<ChartKey>("roas");
+  const [metric, setMetric] = useState<ChartKey>("gasto");
   const [importOpen, setImportOpen] = useState(false);
   const [scope, setScope] = useState<"ad" | "account">("ad");
   const [banner, setBanner] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -224,7 +229,7 @@ function Live() {
   }
 
   return (
-    <main data-testid="elixia-app" className="mx-auto max-w-6xl px-4 pb-16 pt-5">
+    <main data-testid="elixia-app" className="w-full px-4 pt-5 pb-16 sm:px-6 xl:px-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button type="button" className="grid size-11 place-items-center overflow-hidden rounded-xl bg-logo text-lg font-extrabold text-on-logo" onClick={() => setLookOpen(true)} aria-label="Personalizar marca">
@@ -284,7 +289,7 @@ function Live() {
         />
       )}
 
-      <nav className="sticky top-0 z-20 -mx-4 mt-4 flex gap-2 overflow-x-auto border-b border-line bg-canvas/95 px-4 py-2 backdrop-blur">
+      <nav className="sticky top-0 z-20 -mx-4 mt-4 flex gap-2 overflow-x-auto border-b border-line bg-canvas/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6 xl:-mx-8 xl:px-8">
         <Tip text={TIP.navCuenta}>
           <a className={navLink} href="#cuenta">Cuenta</a>
         </Tip>
@@ -404,7 +409,7 @@ function Live() {
         </div>
         <div className={clsx("mt-3 rounded-2xl border px-4 py-3", tonePanel(accountStory.tone))}>
           <p className="text-sm font-bold">{accountStory.title}</p>
-          <p className="mt-1 text-sm">{accountStory.body}</p>
+          {accountStory.body && <AiNote>{accountStory.body}</AiNote>}
         </div>
         {summaries.length > 0 && (
           <SpendMix items={summaries.map((s) => ({ ad: s.ad, gasto: s.agg.gasto, history: s.history }))} theme={theme} skin={skin} />
@@ -603,7 +608,11 @@ function AdDetail({
   onDuration: (n: number | null) => void;
 }) {
   const verdict = getVerdict(agg);
-  const hasVideo = history.some((s) => s.v3s != null || s.avgT != null || s.p100 != null);
+  const signals = creativeSignals(history, agg);
+  const holdTone = signals.plays3 != null && signals.plays3 < 30 ? "n" : toneFor("hold", agg.hold);
+  const hasVideo = history.some((s) => s.v3s != null || s.avgT != null || s.p50 != null || s.p75 != null || s.p100 != null);
+  const [histSort, setHistSort] = useState<{ key: HistKey; dir: "asc" | "desc" }>({ key: "fecha", dir: "asc" });
+  const historyRows = [...history].sort((a, b) => compareHist(a, b, histSort.key, histSort.dir, duration));
   return (
     <div className="min-w-0 space-y-4">
       <div className="rounded-2xl border border-line bg-surface p-4">
@@ -622,10 +631,10 @@ function AdDetail({
             </Tip>
           </span>
         </div>
-        <p className="mt-2 text-sm text-muted">
-          {verdict.why} Acumulado: {f2(agg.gasto)} € y {fi(agg.resultados)} compras
-          {agg.skipped ? ` · ${agg.skipped} informes solapados fuera del total` : ""}.
-        </p>
+        <AiNote>{verdict.why}</AiNote>
+        {agg.skipped > 0 && (
+          <p className="mt-2 text-xs text-muted">{agg.skipped} informes solapados fuera del total.</p>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -633,6 +642,36 @@ function AdDetail({
         <Kpi label="Compras" value={fi(agg.resultados)} hint={TIP.compras} bar="bg-ok" />
         <Kpi label="CPA" value={fm(agg.cpa, " €")} hint={TIP.cpa} bar="bg-accent" tone={toneFor("cpa", agg.cpa)} />
         <Kpi label="ROAS" value={fm(agg.roas, "x")} hint={agg.roasAdjusted ? `${TIP.roas} Este valor venía en porcentaje y ya está en multiplicador.` : TIP.roas} bar="bg-gold" tone={toneFor("roas", agg.roas)} />
+      </div>
+
+      <div className="rounded-2xl border border-line bg-surface p-4">
+        <h3 className="font-bold">
+          <Tip text={TIP.edad}>
+            <span className="inline-flex items-center gap-1.5">
+              Señales del anuncio
+              <HelpMark />
+            </span>
+          </Tip>
+        </h3>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Signal label="CPM" value={fm(signals.cpm, " €")} hint={TIP.cpm} />
+          <Signal
+            label="Reacciones"
+            value={signals.reactions == null ? "—" : `${fi(signals.reactions)} · ${fm(signals.reactionRate, "%")}`}
+            hint={TIP.reacciones}
+          />
+          <Signal label="Calidad" value={signals.quality ?? "Sin puntuar"} hint={TIP.calidad} tone={rankTone(signals.quality)} />
+          <Signal label="Conversiones" value={signals.convRank ?? "Sin puntuar"} hint={TIP.ranking} tone={rankTone(signals.convRank)} />
+        </div>
+        {signals.notes.length > 0 && (
+          <AiNote>
+            <ul className="space-y-1">
+              {signals.notes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          </AiNote>
+        )}
       </div>
 
       <div className="rounded-2xl border border-line bg-surface p-4">
@@ -646,7 +685,7 @@ function AdDetail({
                 </span>
               </Tip>
             </h3>
-            <p className="text-sm text-muted">{hasVideo ? agg.retentionNote : "Este anuncio no trae reproducciones en los informes."}</p>
+            {!hasVideo && <p className="text-sm text-muted">Este anuncio no trae reproducciones en los informes.</p>}
           </div>
           <Tip text={TIP.duracion}>
             <label className="text-xs font-semibold text-muted">
@@ -673,10 +712,46 @@ function AdDetail({
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Mini label="Hook rate" value={fm(agg.hook, "%")} tone={toneFor("hook", agg.hook)} hint={TIP.hook} />
-          <Mini label="Hold rate" value={fm(agg.hold, "%")} tone={toneFor("hold", agg.hold)} hint={TIP.hold} />
+          <Mini label="Hold rate" value={fm(agg.hold, "%")} tone={holdTone} hint={TIP.hold} />
           <Mini label="Tiempo medio" value={fm(agg.avgT, " s")} tone={toneFor("avgT", agg.avgT)} hint={TIP.avgT} />
-          <Mini label="Tiempo / duración" value={fm(agg.watch, "%")} tone={toneFor("watch", agg.watch)} hint={TIP.watch} />
+          <Mini label="Visto del vídeo" value={fm(agg.watch, "%")} tone={toneFor("watch", agg.watch)} hint={TIP.watch} />
         </div>
+        {(agg.hold50 != null || agg.hold75 != null || agg.complete != null) && (
+          <p className="mt-3 text-sm text-muted">
+            De quienes vieron 3 s
+            {agg.hold50 != null ? ` · mitad ${fm(agg.hold50, "%")}` : ""}
+            {agg.hold75 != null ? ` · 75% ${fm(agg.hold75, "%")}` : ""}
+            {agg.complete != null ? ` · cierre ${fm(agg.complete, "%")}` : ""}
+          </p>
+        )}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        {SPARK_KEYS.map((key) => {
+          const def = CHART_METRICS.find((m) => m.id === key)!;
+          const value = key === "alcance" ? fi(agg.alcance) : fm(agg[key as keyof Agg] as number | null, suffixFor(key));
+          const tone = toneFor(key, typeof agg[key as keyof Agg] === "number" ? (agg[key as keyof Agg] as number) : null);
+          return (
+            <article key={key} className={clsx("h-full rounded-2xl border px-3 py-3", tonePanel(tone))}>
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+                <Tip text={sparkTip(key)}>
+                  <span className="inline-flex items-center gap-1.5">
+                    {def.label}
+                    {key === "alcance" ? " · suma de días" : ""}
+                    <HelpMark />
+                  </span>
+                </Tip>
+              </p>
+              <p className="mt-1 font-mono text-xl font-bold tabular-nums">{value}</p>
+              <Spark
+                points={sparkPoints(history, key, duration)}
+                tone={tone}
+                mark={def.thresholds ? (def.hi ? def.thresholds[1] : def.thresholds[0]) : undefined}
+                format={(n) => formatMetric(key, n)}
+              />
+            </article>
+          );
+        })}
       </div>
 
       <div className="rounded-2xl border border-line bg-surface p-4">
@@ -692,29 +767,37 @@ function AdDetail({
           <table className="w-full min-w-[860px] border-collapse text-right text-sm">
             <thead>
               <tr className="text-xs tracking-wide text-muted uppercase">
-                {(
-                  [
-                    ["Fecha informe", TIP.fecha],
-                    ["Gasto (€)", TIP.gasto],
-                    ["Compras", TIP.compras],
-                    ["CPA (€)", TIP.cpa],
-                    ["ROAS", TIP.roas],
-                    ["Alcance", TIP.alcance],
-                    ["Frecuencia", TIP.freq],
-                    ["CTR enlace (%)", TIP.ctr],
-                    ["Carga LPV (%)", TIP.lpv],
-                    ["Hook rate (%)", TIP.hook],
-                    ["Tiempo medio (s)", TIP.avgT],
-                  ] as const
-                ).map(([h, tip]) => (
-                  <th key={h} className={clsx("border-b border-line px-2 py-2 font-semibold", h === "Fecha informe" && "sticky left-0 bg-surface text-left")}>
-                    <Tip text={tip}>{h}</Tip>
-                  </th>
-                ))}
+                {HIST_COLS.map((col) => {
+                  const on = histSort.key === col.id;
+                  return (
+                    <th
+                      key={col.id}
+                      aria-sort={on ? (histSort.dir === "asc" ? "ascending" : "descending") : "none"}
+                      className={clsx("border-b border-line px-1 py-1 font-semibold", col.id === "fecha" && "sticky left-0 bg-surface text-left")}
+                    >
+                      <button
+                        type="button"
+                        className={clsx("inline-flex min-h-11 w-full items-center gap-1 rounded-lg px-1", col.id === "fecha" ? "justify-start" : "justify-end")}
+                        onClick={() =>
+                          setHistSort((cur) =>
+                            cur.key === col.id ? { key: col.id, dir: cur.dir === "asc" ? "desc" : "asc" } : { key: col.id, dir: "desc" },
+                          )
+                        }
+                      >
+                        <Tip text={col.tip}>{col.label}</Tip>
+                        {on ? (
+                          histSort.dir === "asc" ? <ArrowUp className="size-3.5 shrink-0" /> : <ArrowDown className="size-3.5 shrink-0" />
+                        ) : (
+                          <ArrowUpDown className="size-3.5 shrink-0 opacity-40" />
+                        )}
+                      </button>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
-              {history.map((row) => (
+              {historyRows.map((row) => (
                 <HistoryRow key={`${row.inicio}-${row.fin}-${row.gasto}`} row={row} duration={duration} />
               ))}
               <tr className="font-bold">
@@ -754,29 +837,6 @@ function AdDetail({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {SPARK_KEYS.map((key) => {
-          const def = CHART_METRICS.find((m) => m.id === key)!;
-          const value = key === "alcance" ? fi(agg.alcance) : fm(agg[key as keyof Agg] as number | null, suffixFor(key));
-          const tone = toneFor(key, typeof agg[key as keyof Agg] === "number" ? (agg[key as keyof Agg] as number) : null);
-          return (
-            <article key={key} className={clsx("h-full rounded-2xl border px-3 py-3", tonePanel(tone))}>
-                <p className="flex items-center gap-1.5 text-xs font-semibold text-muted">
-                  <Tip text={sparkTip(key)}>
-                    <span className="inline-flex items-center gap-1.5">
-                      {def.label}
-                      {key === "alcance" ? " · suma de días" : ""}
-                      <HelpMark />
-                    </span>
-                  </Tip>
-                </p>
-                <p className="mt-1 font-mono text-xl font-bold tabular-nums">{value}</p>
-                <Spark points={sparkPoints(history, key, duration)} higher={def.hi} format={(n) => formatMetric(key, n)} />
-              </article>
-          );
-        })}
-      </div>
-
       <div className="rounded-2xl border border-line bg-surface p-4">
         <h3 className="mb-3 font-bold">
           <Tip text={TIP.evolucion}>
@@ -786,10 +846,46 @@ function AdDetail({
             </span>
           </Tip>
         </h3>
-        <ChartPanel history={history} metric={availableMetrics(history, duration).includes(metric) ? metric : "roas"} onMetric={onMetric} duration={duration} theme={theme} skin={skin} />
+        <ChartPanel history={history} metric={CHART_GROUPS.some((g) => g.keys.includes(metric)) ? metric : "gasto"} onMetric={onMetric} duration={duration} theme={theme} skin={skin} />
       </div>
     </div>
   );
+}
+
+type HistKey = "fecha" | "gasto" | "resultados" | "cpa" | "roas" | "alcance" | "freq" | "ctr" | "lpv" | "hook" | "avgT";
+
+const HIST_COLS: { id: HistKey; label: string; tip: string }[] = [
+  { id: "fecha", label: "Fecha informe", tip: TIP.fecha },
+  { id: "gasto", label: "Gasto (€)", tip: TIP.gasto },
+  { id: "resultados", label: "Compras", tip: TIP.compras },
+  { id: "cpa", label: "CPA (€)", tip: TIP.cpa },
+  { id: "roas", label: "ROAS", tip: TIP.roas },
+  { id: "alcance", label: "Alcance", tip: TIP.alcance },
+  { id: "freq", label: "Frecuencia", tip: TIP.freq },
+  { id: "ctr", label: "CTR enlace (%)", tip: TIP.ctr },
+  { id: "lpv", label: "Carga LPV (%)", tip: TIP.lpv },
+  { id: "hook", label: "Hook rate (%)", tip: TIP.hook },
+  { id: "avgT", label: "Tiempo medio (s)", tip: TIP.avgT },
+];
+
+function histValue(row: Snap, key: HistKey, duration?: number): number | null {
+  if (key === "fecha") {
+    const t = Date.parse(`${row.fin}T00:00:00Z`);
+    return Number.isFinite(t) ? t : null;
+  }
+  if (key === "hook") return aggregate([row], duration).hook;
+  const v = row[key];
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+function compareHist(a: Snap, b: Snap, key: HistKey, dir: "asc" | "desc", duration?: number): number {
+  const va = histValue(a, key, duration);
+  const vb = histValue(b, key, duration);
+  if (va == null && vb == null) return a.fin.localeCompare(b.fin);
+  if (va == null) return 1;
+  if (vb == null) return -1;
+  if (va === vb) return a.fin.localeCompare(b.fin) || a.inicio.localeCompare(b.inicio);
+  return dir === "asc" ? va - vb : vb - va;
 }
 
 function sparkTip(key: ChartKey): string {
@@ -840,6 +936,34 @@ function ToneCell({ tone, children, top }: { tone: Tone; children: ReactNode; to
   );
 }
 
+function AiNote({ children, compact }: { children: ReactNode; compact?: boolean }) {
+  return (
+    <div className={clsx("flex gap-2.5 rounded-2xl border border-accent/50 bg-soft", compact ? "mt-2 px-2.5 py-2" : "mt-3 px-3 py-3")}>
+      <span className={clsx("grid shrink-0 place-items-center rounded-full bg-logo text-on-logo", compact ? "size-6" : "size-8")} aria-hidden>
+        <Sparkles className={compact ? "size-3.5" : "size-4"} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold tracking-widest text-accent-ink uppercase">Lectura</p>
+        <div className="mt-0.5 text-sm text-fg">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Signal({ label, value, hint, tone = "n" }: { label: string; value: string; hint: string; tone?: Tone }) {
+  return (
+    <Tip text={hint} block>
+      <article className={clsx("h-full rounded-xl border px-3 py-3", tonePanel(tone))}>
+        <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+          {label}
+          <HelpMark />
+        </p>
+        <p className="mt-1 text-sm font-bold">{value}</p>
+      </article>
+    </Tip>
+  );
+}
+
 function Mini({ label, value, hint, tone }: { label: string; value: string; hint: string; tone: Tone }) {
   return (
     <Tip text={hint} block>
@@ -866,11 +990,11 @@ function SiteBlock({
   onScope: (s: "ad" | "account") => void;
 }) {
   const agg = scope === "account" || !ad ? account : ad.agg;
-  const label = scope === "account" || !ad ? "toda la cuenta" : ad.ad;
   const story = siteDiagnosis(agg);
   const drop = dropoffRead(agg.dropoff);
   const cr = crRead(agg.cr);
   const intent = intentRead(agg);
+  const payCut = agg.intent != null && agg.intent >= 55 && agg.payRate != null && agg.payRate < 45;
   const steps = [
     { label: "Clics en el enlace", value: agg.clics },
     { label: "Visitas a la landing", value: agg.vis },
@@ -888,16 +1012,7 @@ function SiteBlock({
           Toda la cuenta
         </button>
       </div>
-      <div className={clsx("rounded-2xl border px-4 py-3", tonePanel(story.tone))}>
-        <p className="flex items-center gap-2 text-sm font-bold">
-          {story.tone === "r" && <AlertTriangle className="size-4" />}
-          {story.title}
-        </p>
-        <p className="mt-1 text-sm">
-          Sobre {label}. {story.body}
-        </p>
-      </div>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <article className="rounded-2xl border border-line bg-surface p-4">
           <h3 className="font-bold">
             <Tip text={TIP.embudo}>
@@ -909,75 +1024,119 @@ function SiteBlock({
           </h3>
           <Funnel steps={steps} />
         </article>
-        <div className="grid gap-3">
-          <DiagCard title="Fuga de carga" tip={TIP.dropoff} read={drop} extra={<p className="mt-2 font-mono text-2xl font-bold tabular-nums">{fm(agg.dropoff, "%")}</p>} />
-          <DiagCard
-            title="CR% global"
-            tip={TIP.cr}
-            read={cr}
-            extra={
-              <>
-                <p className="mt-2 font-mono text-2xl font-bold tabular-nums">{fm(agg.cr, "%")}</p>
-                <CrMeter value={agg.cr} />
-              </>
-            }
-          />
-          <DiagCard
-            title="Intención de compra"
-            tip={TIP.intent}
-            read={intent}
-            extra={<p className="mt-2 font-mono text-2xl font-bold tabular-nums">{agg.intent == null ? "—" : `${f2(agg.intent)}% IC/ATC`}</p>}
-          />
-        </div>
+        <article className="rounded-2xl border border-line bg-surface p-4">
+          <h3 className="font-bold">Lecturas</h3>
+          <ul className="mt-3 divide-y divide-line">
+            <ReadRow label="Fuga de carga" tip={TIP.dropoff} value={fm(agg.dropoff, "%")} title={drop.title} tone={drop.tone} />
+            <ReadRow label="CR% global" tip={TIP.cr} value={fm(agg.cr, "%")} title={cr.title} tone={cr.tone}>
+              <CrMeter value={agg.cr} />
+            </ReadRow>
+            <ReadRow
+              label={payCut ? "Cobro del pago" : "Paso de pago"}
+              tip={TIP.intent}
+              value={payCut ? fm(agg.payRate, "%") : agg.intent == null ? "—" : `${f2(agg.intent)}%`}
+              title={intent.title}
+              tone={intent.tone}
+            />
+          </ul>
+          {story.tone === "n" ? (
+            <p className="mt-3 text-sm text-muted">{story.body}</p>
+          ) : (
+            story.body && <AiNote>{story.body}</AiNote>
+          )}
+        </article>
       </div>
     </div>
   );
 }
 
-function DiagCard({ title, tip, read, extra }: { title: string; tip: string; read: { tone: Tone; title: string; body: string }; extra?: ReactNode }) {
+function ReadRow({
+  label,
+  tip,
+  value,
+  title,
+  tone,
+  children,
+}: {
+  label: string;
+  tip: string;
+  value: string;
+  title: string;
+  tone: Tone;
+  children?: ReactNode;
+}) {
   return (
-    <article className={clsx("rounded-2xl border px-4 py-3", tonePanel(read.tone))}>
-      <p className="text-xs font-semibold tracking-widest uppercase">
-        <Tip text={tip}>
-          <span className="inline-flex items-center gap-1.5">
-            {title}
-            <HelpMark />
-          </span>
-        </Tip>
-      </p>
-      <p className="mt-1 font-bold">{read.title}</p>
-      {extra}
-      <p className="mt-1 text-sm">{read.body}</p>
-    </article>
+    <li className="py-3 first:pt-0 last:pb-0">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-xs font-semibold tracking-wide text-muted uppercase">
+          <Tip text={tip}>
+            <span className="inline-flex items-center gap-1.5">
+              {label}
+              <HelpMark />
+            </span>
+          </Tip>
+        </p>
+        <p className={clsx("font-mono text-xl font-bold tabular-nums", toneText(tone))}>{value}</p>
+      </div>
+      <p className="mt-0.5 text-sm font-semibold">{title}</p>
+      {children}
+    </li>
   );
 }
 
 function Funnel({ steps }: { steps: { label: string; value: number | null }[] }) {
   const nums = steps.map((s) => s.value).filter((v): v is number => v != null && v > 0);
   const max = Math.max(...nums, 1);
+  let prevWidth = 100;
+  const widths = steps.map((s, i) => {
+    const raw = s.value == null ? prevWidth : Math.max(52, (s.value / max) * 100);
+    const width = i === 0 ? 100 : Math.min(prevWidth, raw);
+    prevWidth = width;
+    return width;
+  });
   return (
-    <ol className="space-y-3">
+    <ol className="mx-auto mt-4 flex max-w-md flex-col items-center">
       {steps.map((s, i) => {
         const prev = i > 0 ? steps[i - 1].value : null;
-        const rate = s.value != null && prev ? (s.value / prev) * 100 : null;
-        const width = s.value == null ? 0 : Math.max(s.value > 0 ? 3 : 0, (s.value / max) * 100);
+        const loss = s.value != null && prev != null && prev > 0 ? ((prev - s.value) / prev) * 100 : null;
+        const tone = connectorTone(i, prev, s.value);
         return (
-          <li key={s.label}>
-            <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-              <span className="font-semibold">{s.label}</span>
-              <span className="font-mono text-xs tabular-nums text-muted">
-                {s.value == null ? "sin dato" : fi(s.value)}
-                {rate != null ? ` · ${f2(rate)}% del anterior` : ""}
-              </span>
-            </div>
-            <div className="h-2.5 rounded-full bg-soft">
-              <div className="h-2.5 rounded-full bg-accent" style={{ width: `${width}%` }} />
+          <li key={s.label} className="flex w-full flex-col items-center">
+            {i > 0 &&
+              (loss == null ? (
+                <span className="my-1 h-4 w-px bg-line" aria-hidden />
+              ) : (
+                <p className={clsx("flex h-7 items-center font-mono text-xs tabular-nums", tone ? toneText(tone) : "text-muted")}>
+                  {loss >= 0 ? "−" : "+"}
+                  {f2(Math.abs(loss))}%
+                </p>
+              ))}
+            <div className={clsx("rounded-xl border px-2 py-2 text-center", funnelFace(i === 0 ? "src" : tone))} style={{ width: `${widths[i]}%` }}>
+              <p className="text-xs font-semibold leading-snug">{s.label}</p>
+              <p className="font-mono text-base font-bold tabular-nums">{s.value == null ? "—" : fi(s.value)}</p>
             </div>
           </li>
         );
       })}
     </ol>
   );
+}
+
+function connectorTone(index: number, prev: number | null, value: number | null): Tone | null {
+  if (prev == null || value == null || prev <= 0) return null;
+  const keep = (value / prev) * 100;
+  if (index === 1) return keep >= 85 ? "g" : keep >= 70 ? "y" : "r";
+  if (index === 3) return keep >= 55 ? "g" : keep >= 40 ? "y" : "r";
+  if (index === 4) return keep >= 45 ? "g" : "r";
+  return null;
+}
+
+function funnelFace(tone: Tone | "src" | null): string {
+  if (tone === "src") return "border-accent/40 bg-accent/15";
+  if (tone === "g") return "border-ok/40 bg-ok/10";
+  if (tone === "y") return "border-warn/40 bg-warn/10";
+  if (tone === "r") return "border-bad/40 bg-bad/10";
+  return "border-line bg-soft";
 }
 
 function CrMeter({ value }: { value: number | null }) {

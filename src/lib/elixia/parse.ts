@@ -139,6 +139,13 @@ export function isGhostAd(name: string): boolean {
   return !n || n === "0" || n === "total" || n === "cuenta" || n.startsWith("total ") || n === "resultados totales";
 }
 
+function rankText(cell: InputCell | undefined): string | null {
+  const raw = String(unwrap(cell).value ?? "").trim();
+  const n = norm(raw);
+  if (!n || n === "0" || n === "na" || n === "n a" || n.includes("sin clasificar") || n === "unknown") return null;
+  return raw.slice(0, 80);
+}
+
 function isActive(v: unknown): boolean {
   const s = norm(String(v ?? ""));
   if (!s) return false;
@@ -162,7 +169,10 @@ export function rowsToSnaps(rows: InputRow[]): Snap[] {
       (k) => notMoney(k) && (/(^| )compras($| )/.test(k) || /(^| )purchases($| )/.test(k) || k === "compra" || k === "purchase"),
       (k) => (k === "compras" || k === "purchases" ? 0 : k.includes("sitio") || k.includes("website") ? 2 : 1) + k.length / 1000,
     ),
-    results: pick(keys, (k) => notMoney(k) && (k === "resultados" || k === "results" || (k.startsWith("resultados ") && !k.includes("indicador")))),
+    results: pick(
+      keys,
+      (k) => notMoney(k) && !k.includes("inicial") && (k === "resultados" || k === "results" || (k.startsWith("resultados ") && !k.includes("indicador"))),
+    ),
     cpa: pick(keys, (k) => k.startsWith("costo por resultados") || k.startsWith("costo por compra") || k.startsWith("cost per result") || k === "cpa" || k.startsWith("cpa ")),
     freq: pick(keys, (k) => k === "frecuencia" || k === "frequency" || k.startsWith("frecuencia ")),
     ctr: pick(
@@ -194,6 +204,7 @@ export function rowsToSnaps(rows: InputRow[]): Snap[] {
     p100: pick(keys, (k) => /reproduc|video|play|visualiz/.test(k) && (k.includes("hasta el 100") || k.includes("100%") || k.includes("at 100"))),
     p95: pick(keys, (k) => /reproduc|video|play|visualiz/.test(k) && (k.includes("hasta el 95") || k.includes("95%") || k.includes("at 95"))),
     p75: pick(keys, (k) => /reproduc|video|play|visualiz/.test(k) && (k.includes("hasta el 75") || k.includes("75%") || k.includes("at 75"))),
+    p50: pick(keys, (k) => /reproduc|video|play|visualiz/.test(k) && (k.includes("hasta el 50") || k.includes("50%") || k.includes("at 50")) && !k.includes("150")),
     thru: pick(keys, (k) => k.includes("thruplay") || k.includes("reproducciones continuas")),
     vis: pick(keys, (k) => {
       if (/porcentaje|costo|coste|cost |rate/.test(k)) return false;
@@ -215,11 +226,15 @@ export function rowsToSnaps(rows: InputRow[]): Snap[] {
       );
     }),
     delivery: pick(keys, (k) => k.includes("entrega del anuncio") || k === "ad delivery" || k === "delivery" || k.includes("delivery status")),
+    reactions: pick(keys, (k) => k.includes("reacciones") || k.includes("post reaction") || k === "reactions"),
+    quality: pick(keys, (k) => k.includes("clasificacion de calidad") || k.includes("quality ranking")),
+    convRank: pick(keys, (k) => (k.includes("clasificacion") && k.includes("conversion")) || k.includes("conversion rate ranking")),
+    created: pick(keys, (k) => k.startsWith("fecha de creacion") || k.startsWith("ad created") || k === "created time"),
   };
   const roasKeys = ranked(
     keys,
     (k) => k.includes("roas") && !/movil|mobile| app/.test(k),
-    (k) => (k.includes("compra") || k.includes("purchase") ? 0 : 10) + (k.includes("sitio") || k.includes("website") ? 2 : 0) + k.length / 1000,
+    (k) => (k.includes("compra") || k.includes("purchase") ? (k.includes("sitio") || k.includes("website") ? 0 : 1) : 10) + k.length / 1000,
   );
   const spendKeys = ranked(
     keys,
@@ -232,7 +247,7 @@ export function rowsToSnaps(rows: InputRow[]): Snap[] {
   const valueKeys = ranked(
     keys,
     (k) => {
-      if (k.includes("roas") || /costo|coste|cost /.test(k)) return false;
+      if (k.includes("roas") || k.includes("reglas de valor") || k.includes("value rule") || /costo|coste|cost /.test(k)) return false;
       return (/valor|ingreso|conversion value|revenue/.test(k) && (k.includes("compra") || k.includes("purchase")));
     },
     (k) => k.length,
@@ -267,7 +282,7 @@ export function rowsToSnaps(rows: InputRow[]): Snap[] {
     const roasResolved = (() => {
       for (const key of roasKeys) {
         const fromCol = numFrom(read(row, key), "roas");
-        if (fromCol.n != null) return { roas: fromCol.n, adjusted: fromCol.adjusted, origin: "column" as RoasOrigin };
+        if (fromCol.n != null && fromCol.n > 0) return { roas: fromCol.n, adjusted: fromCol.adjusted, origin: "column" as RoasOrigin };
       }
       if (purchaseValue != null && spend > 0) return { roas: purchaseValue / spend, adjusted: false, origin: "value" as RoasOrigin };
       return { roas: null, adjusted: false, origin: "none" as RoasOrigin };
@@ -309,6 +324,7 @@ export function rowsToSnaps(rows: InputRow[]): Snap[] {
       alcance: numFrom(read(row, col.alcance), "plain").n,
       plays: numFrom(read(row, col.plays), "plain").n,
       v3s: numFrom(read(row, col.v3s), "plain").n,
+      p50: numFrom(read(row, col.p50), "plain").n,
       p75: numFrom(read(row, col.p75), "plain").n,
       p95: numFrom(read(row, col.p95), "plain").n,
       p100: numFrom(read(row, col.p100), "plain").n,
@@ -318,6 +334,10 @@ export function rowsToSnaps(rows: InputRow[]): Snap[] {
       duration: toSec(unwrap(read(row, col.duration)).value),
       atc: col.atc ? numFrom(read(row, col.atc), "plain").n : null,
       ic: col.ic ? numFrom(read(row, col.ic), "plain").n : null,
+      reactions: numFrom(read(row, col.reactions), "plain").n,
+      quality: rankText(read(row, col.quality)),
+      convRank: rankText(read(row, col.convRank)),
+      created: toIsoDate(unwrap(read(row, col.created)).value),
     });
   }
   return out;
