@@ -229,7 +229,7 @@ function Live() {
   }
 
   return (
-    <main data-testid="elixia-app" className="w-full px-4 pt-5 pb-16 sm:px-6 xl:px-8">
+    <main data-testid="elixia-app" className="mx-auto max-w-6xl px-4 pb-16 pt-5">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button type="button" className="grid size-11 place-items-center overflow-hidden rounded-xl bg-logo text-lg font-extrabold text-on-logo" onClick={() => setLookOpen(true)} aria-label="Personalizar marca">
@@ -289,7 +289,7 @@ function Live() {
         />
       )}
 
-      <nav className="sticky top-0 z-20 -mx-4 mt-4 flex gap-2 overflow-x-auto border-b border-line bg-canvas/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6 xl:-mx-8 xl:px-8">
+      <nav className="sticky top-0 z-20 -mx-4 mt-4 flex gap-2 overflow-x-auto border-b border-line bg-canvas/95 px-4 py-2 backdrop-blur">
         <Tip text={TIP.navCuenta}>
           <a className={navLink} href="#cuenta">Cuenta</a>
         </Tip>
@@ -726,7 +726,7 @@ function AdDetail({
         )}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {SPARK_KEYS.map((key) => {
           const def = CHART_METRICS.find((m) => m.id === key)!;
           const value = key === "alcance" ? fi(agg.alcance) : fm(agg[key as keyof Agg] as number | null, suffixFor(key));
