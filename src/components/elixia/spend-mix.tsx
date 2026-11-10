@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import clsx from "clsx";
 import { f2, fi } from "@/lib/elixia/format";
+import { dayCount, nonOverlap } from "@/lib/elixia/metrics";
 import type { Snap } from "@/lib/elixia/types";
 import { HelpMark, TIP, Tip } from "./help";
 
@@ -44,6 +46,7 @@ export function SpendMix({ items, theme, skin }: { items: Item[]; theme: "light"
                     className={clsx("flex min-h-11 w-full items-center gap-2 rounded-xl px-2 text-left text-sm", on ? "bg-accent/15" : "hover:bg-soft")}
                   >
                     <span className="size-2.5 shrink-0 rounded-full" style={{ background: PALETTE[i % PALETTE.length] }} />
+                    <SpendArrow history={s.history} />
                     <span className="min-w-0 flex-1 truncate font-semibold">{s.ad}</span>
                     <span className="font-mono text-xs tabular-nums text-muted">
                       {f2(s.gasto)} € · {f2(share)}%
@@ -70,6 +73,33 @@ export function SpendMix({ items, theme, skin }: { items: Item[]; theme: "light"
       {current && <DailyLine ad={current.ad} history={current.history} theme={theme} skin={skin} />}
     </div>
   );
+}
+
+function SpendArrow({ history }: { history: Snap[] }) {
+  const trend = spendTrend(history);
+  if (!trend) return null;
+  const up = trend === "up";
+  return (
+    <span className={clsx("inline-flex shrink-0", up ? "text-ok" : "text-bad")} title={up ? "El gasto por día va al alza" : "El gasto por día va a la baja"}>
+      {up ? <ArrowUp className="size-3.5" aria-label="El gasto sube" /> : <ArrowDown className="size-3.5" aria-label="El gasto baja" />}
+    </span>
+  );
+}
+
+function spendTrend(history: Snap[]): "up" | "down" | null {
+  const rates = nonOverlap(history)
+    .sort((a, b) => a.fin.localeCompare(b.fin) || a.inicio.localeCompare(b.inicio))
+    .map((row) => row.gasto / dayCount(row))
+    .filter((n) => Number.isFinite(n));
+  if (rates.length < 2) return null;
+  const mid = Math.ceil(rates.length / 2);
+  const early = rates.slice(0, mid).reduce((a, n) => a + n, 0) / mid;
+  const lateCount = rates.length - mid;
+  const late = rates.slice(mid).reduce((a, n) => a + n, 0) / lateCount;
+  if (!(early > 0)) return late > 0 ? "up" : null;
+  if (late >= early * 1.08) return "up";
+  if (late <= early * 0.92) return "down";
+  return null;
 }
 
 function Donut({

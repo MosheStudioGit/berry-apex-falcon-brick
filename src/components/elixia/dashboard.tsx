@@ -26,9 +26,9 @@ import {
   LEGEND,
   SPARK_KEYS,
   accountOf,
-  accountRead,
   aggregate,
   crRead,
+  div,
   dropoffRead,
   getVerdict,
   intentRead,
@@ -143,7 +143,6 @@ function Live() {
     .filter((s) => (!activeOnly || s.latest.activo) && s.ad.toLowerCase().includes(query.trim().toLowerCase()))
     .sort((a, b) => b.agg.gasto - a.agg.gasto);
   const current = summaries.find((s) => s.ad === selected) ?? visible[0] ?? summaries[0] ?? null;
-  const accountStory = accountRead(account);
 
   async function ingest(list: FileList | File[]) {
     const files = [...list];
@@ -291,13 +290,16 @@ function Live() {
 
       <nav className="sticky top-0 z-20 -mx-4 mt-4 flex gap-2 overflow-x-auto border-b border-line bg-canvas/95 px-4 py-2 backdrop-blur">
         <Tip text={TIP.navCuenta}>
-          <a className={navLink} href="#cuenta">Cuenta</a>
-        </Tip>
-        <Tip text={TIP.navCreativos}>
-          <a className={navLink} href="#creativos">Creativos</a>
+          <a className={navLink} href="#atraccion">Atracción</a>
         </Tip>
         <Tip text={TIP.navSitio}>
-          <a className={navLink} href="#sitio">Sitio</a>
+          <a className={navLink} href="#interes">Interés</a>
+        </Tip>
+        <Tip text={TIP.fases}>
+          <a className={navLink} href="#compra">Compra</a>
+        </Tip>
+        <Tip text={TIP.navCreativos}>
+          <a className={navLink} href="#creativos">Anuncio</a>
         </Tip>
       </nav>
 
@@ -394,34 +396,39 @@ function Live() {
         </p>
       )}
 
-      <section className="mt-8" aria-labelledby="cuenta-title">
+      <FlowBoard
+        account={account}
+        ad={current}
+        scope={scope}
+        onScope={setScope}
+        duration={current ? durations[current.ad] : undefined}
+        onDuration={(n) => {
+          if (!current) return;
+          setDurations((d) => {
+            const next = { ...d };
+            if (n == null) delete next[current.ad];
+            else next[current.ad] = n;
+            return next;
+          });
+        }}
+      />
+
+      <section className="mt-10" aria-labelledby="sitio-title">
         <BlockHead
-          id="cuenta"
-          titleId="cuenta-title"
-          title="Rendimiento general"
-          lede="Gasto, compras, CPA y ROAS de toda la cuenta. El color usa los mismos cortes que un anuncio, calculados con sumas y no con medias de porcentajes."
+          id="sitio"
+          titleId="sitio-title"
+          title="Dónde se rompe el recorrido"
+          lede="El mismo camino, en un embudo: del clic a la compra, con la fuga de carga, la conversión y la fricción del pago."
         />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Kpi label="Gasto" value={`${f2(account.gasto)} €`} hint={TIP.gasto} bar="bg-logo" />
-          <Kpi label="Compras" value={fi(account.resultados)} hint={TIP.compras} bar="bg-ok" />
-          <Kpi label="CPA" value={fm(account.cpa, " €")} hint={TIP.cpa} bar="bg-accent" tone={toneFor("cpa", account.cpa)} testId="kpi-cpa" />
-          <Kpi label="ROAS" value={fm(account.roas, "x")} hint={TIP.roas} bar="bg-gold" tone={toneFor("roas", account.roas)} testId="kpi-roas" />
-        </div>
-        <div className={clsx("mt-3 rounded-2xl border px-4 py-3", tonePanel(accountStory.tone))}>
-          <p className="text-sm font-bold">{accountStory.title}</p>
-          {accountStory.body && <AiNote>{accountStory.body}</AiNote>}
-        </div>
-        {summaries.length > 0 && (
-          <SpendMix items={summaries.map((s) => ({ ad: s.ad, gasto: s.agg.gasto, history: s.history }))} theme={theme} skin={skin} />
-        )}
+        <SiteBlock account={account} ad={current} scope={scope} onScope={setScope} />
       </section>
 
       <section className="mt-10" aria-labelledby="creativos-title">
         <BlockHead
           id="creativos"
           titleId="creativos-title"
-          title="Anuncios y retención"
-          lede="Lista al estilo del administrador, histórico sin columnas de más, hook, hold rate real y el veredicto de escalar o apagar."
+          title="Anuncio"
+          lede="El anuncio elegido, su veredicto, las señales de Meta, el histórico y la evolución. Las fases de arriba siguen el anuncio o toda la cuenta."
         />
         {!current ? (
           <div className="space-y-3">
@@ -434,6 +441,10 @@ function Live() {
             </div>
           </div>
         ) : (
+          <div className="space-y-4">
+            {summaries.length > 0 && (
+              <SpendMix items={summaries.map((s) => ({ ad: s.ad, gasto: s.agg.gasto, history: s.history }))} theme={theme} skin={skin} />
+            )}
           <div className="grid items-start gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
             <div className="rounded-2xl border border-line bg-surface p-3 xl:sticky xl:top-16 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto">
               <div className="relative">
@@ -500,27 +511,10 @@ function Live() {
               theme={theme}
               skin={skin}
               duration={durations[current.ad]}
-              onDuration={(n) =>
-                setDurations((d) => {
-                  const next = { ...d };
-                  if (n == null) delete next[current.ad];
-                  else next[current.ad] = n;
-                  return next;
-                })
-              }
             />
           </div>
+          </div>
         )}
-      </section>
-
-      <section className="mt-10" aria-labelledby="sitio-title">
-        <BlockHead
-          id="sitio"
-          titleId="sitio-title"
-          title="Salud de la landing y fricción"
-          lede="Dónde se cae el clic: carga de la página, conversión de clic a compra y si el carrito muere antes o después del pago."
-        />
-        <SiteBlock account={account} ad={current} scope={scope} onScope={setScope} />
       </section>
 
       <section className="mt-10 rounded-2xl border border-line bg-surface px-4 py-3">
@@ -593,7 +587,6 @@ function AdDetail({
   theme,
   skin,
   duration,
-  onDuration,
 }: {
   ad: string;
   campaign: string;
@@ -605,12 +598,9 @@ function AdDetail({
   theme: "light" | "dark";
   skin: SkinId;
   duration?: number;
-  onDuration: (n: number | null) => void;
 }) {
   const verdict = getVerdict(agg);
   const signals = creativeSignals(history, agg);
-  const holdTone = signals.plays3 != null && signals.plays3 < 30 ? "n" : toneFor("hold", agg.hold);
-  const hasVideo = history.some((s) => s.v3s != null || s.avgT != null || s.p50 != null || s.p75 != null || s.p100 != null);
   const [histSort, setHistSort] = useState<{ key: HistKey; dir: "asc" | "desc" }>({ key: "fecha", dir: "asc" });
   const historyRows = [...history].sort((a, b) => compareHist(a, b, histSort.key, histSort.dir, duration));
   return (
@@ -635,13 +625,6 @@ function AdDetail({
         {agg.skipped > 0 && (
           <p className="mt-2 text-xs text-muted">{agg.skipped} informes solapados fuera del total.</p>
         )}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi label="Gasto acumulado" value={`${f2(agg.gasto)} €`} hint={TIP.gasto} bar="bg-logo" />
-        <Kpi label="Compras" value={fi(agg.resultados)} hint={TIP.compras} bar="bg-ok" />
-        <Kpi label="CPA" value={fm(agg.cpa, " €")} hint={TIP.cpa} bar="bg-accent" tone={toneFor("cpa", agg.cpa)} />
-        <Kpi label="ROAS" value={fm(agg.roas, "x")} hint={agg.roasAdjusted ? `${TIP.roas} Este valor venía en porcentaje y ya está en multiplicador.` : TIP.roas} bar="bg-gold" tone={toneFor("roas", agg.roas)} />
       </div>
 
       <div className="rounded-2xl border border-line bg-surface p-4">
@@ -671,58 +654,6 @@ function AdDetail({
               ))}
             </ul>
           </AiNote>
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-line bg-surface p-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h3 className="font-bold">
-              <Tip text={TIP.video}>
-                <span className="inline-flex items-center gap-1.5">
-                  Vídeo
-                  <HelpMark />
-                </span>
-              </Tip>
-            </h3>
-            {!hasVideo && <p className="text-sm text-muted">Este anuncio no trae reproducciones en los informes.</p>}
-          </div>
-          <Tip text={TIP.duracion}>
-            <label className="text-xs font-semibold text-muted">
-              <span className="inline-flex items-center gap-1.5">
-                Duración del vídeo (s)
-                <HelpMark />
-              </span>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              value={duration ?? ""}
-              placeholder="ej. 15"
-              aria-label="Duración del vídeo en segundos"
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                onDuration(!e.target.value || !Number.isFinite(n) || n <= 0 ? null : n);
-              }}
-              className="mt-1 block min-h-11 w-28 rounded-xl border border-line bg-soft px-3 font-mono text-sm text-fg"
-            />
-            </label>
-          </Tip>
-        </div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Mini label="Hook rate" value={fm(agg.hook, "%")} tone={toneFor("hook", agg.hook)} hint={TIP.hook} />
-          <Mini label="Hold rate" value={fm(agg.hold, "%")} tone={holdTone} hint={TIP.hold} />
-          <Mini label="Tiempo medio" value={fm(agg.avgT, " s")} tone={toneFor("avgT", agg.avgT)} hint={TIP.avgT} />
-          <Mini label="Visto del vídeo" value={fm(agg.watch, "%")} tone={toneFor("watch", agg.watch)} hint={TIP.watch} />
-        </div>
-        {(agg.hold50 != null || agg.hold75 != null || agg.complete != null) && (
-          <p className="mt-3 text-sm text-muted">
-            De quienes vieron 3 s
-            {agg.hold50 != null ? ` · mitad ${fm(agg.hold50, "%")}` : ""}
-            {agg.hold75 != null ? ` · 75% ${fm(agg.hold75, "%")}` : ""}
-            {agg.complete != null ? ` · cierre ${fm(agg.complete, "%")}` : ""}
-          </p>
         )}
       </div>
 
@@ -978,6 +909,151 @@ function Mini({ label, value, hint, tone }: { label: string; value: string; hint
   );
 }
 
+function FlowBoard({
+  account,
+  ad,
+  scope,
+  onScope,
+  duration,
+  onDuration,
+}: {
+  account: Agg;
+  ad: { ad: string; agg: Agg; history: Snap[] } | null;
+  scope: "ad" | "account";
+  onScope: (s: "ad" | "account") => void;
+  duration?: number;
+  onDuration: (n: number | null) => void;
+}) {
+  const agg = scope === "account" || !ad ? account : ad.agg;
+  const signals = ad && scope === "ad" ? creativeSignals(ad.history, ad.agg) : null;
+  const holdTone = signals && signals.plays3 != null && signals.plays3 < 30 ? "n" : toneFor("hold", agg.hold);
+  const hasVideo = agg.hook != null || agg.hold != null || agg.avgT != null;
+  const cpm = div(agg.gasto, agg.impr, 1000);
+  const cpc = div(agg.gasto, agg.clics);
+  const cpv = div(agg.gasto, agg.vis);
+  const atcRate = div(agg.atc, agg.vis, 100);
+  const cut = flowCut(agg);
+  return (
+    <div className="mt-8 space-y-10">
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={scope === "ad" ? btnLogo : btnGhost} onClick={() => onScope("ad")} disabled={!ad}>
+          Anuncio seleccionado
+        </button>
+        <button type="button" className={scope === "account" ? btnLogo : btnGhost} onClick={() => onScope("account")}>
+          Toda la cuenta
+        </button>
+      </div>
+
+      <section aria-labelledby="atraccion-title">
+        <BlockHead
+          id="atraccion"
+          titleId="atraccion-title"
+          title="Atracción"
+          lede="Arriba del recorrido: cuántas veces se muestra, a cuántas personas, si el clic sale del anuncio y si el vídeo pasa de los 3 segundos."
+        />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Kpi label="Impresiones" value={fi(agg.impr)} hint={TIP.impr} bar="bg-logo" />
+          <Kpi label="Alcance" value={fi(agg.alcance)} hint={TIP.alcance} bar="bg-accent" />
+          <Kpi label="Frecuencia" value={fm(agg.freq)} hint={TIP.freq} bar="bg-gold" tone={toneFor("freq", agg.freq)} />
+          <Kpi label="CTR enlace" value={fm(agg.ctr, "%")} hint={TIP.ctr} bar="bg-accent" tone={toneFor("ctr", agg.ctr)} />
+          <Kpi label="Hook rate" value={fm(agg.hook, "%")} hint={TIP.hook} bar="bg-ok" tone={toneFor("hook", agg.hook)} />
+          <Kpi label="Hold rate" value={fm(agg.hold, "%")} hint={TIP.hold} bar="bg-ok" tone={holdTone} />
+          <Kpi label="Tiempo medio" value={fm(agg.avgT, " s")} hint={TIP.avgT} bar="bg-gold" tone={toneFor("avgT", agg.avgT)} />
+          <Kpi label="Visto del vídeo" value={fm(agg.watch, "%")} hint={TIP.watch} bar="bg-logo" tone={toneFor("watch", agg.watch)} />
+          <Kpi label="CPM" value={fm(cpm, " €")} hint={TIP.cpm} bar="bg-accent" />
+        </div>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
+          <div>
+            <p className="text-sm font-bold">Vídeo</p>
+            {!hasVideo && <p className="text-sm text-muted">Este conjunto no trae reproducciones.</p>}
+            {(agg.hold50 != null || agg.hold75 != null || agg.complete != null) && (
+              <p className="text-sm text-muted">
+                De quienes vieron 3 s
+                {agg.hold50 != null ? ` · mitad ${fm(agg.hold50, "%")}` : ""}
+                {agg.hold75 != null ? ` · 75% ${fm(agg.hold75, "%")}` : ""}
+                {agg.complete != null ? ` · cierre ${fm(agg.complete, "%")}` : ""}
+              </p>
+            )}
+          </div>
+          {scope === "ad" && ad && (
+            <Tip text={TIP.duracion}>
+              <label className="text-xs font-semibold text-muted">
+                <span className="inline-flex items-center gap-1.5">
+                  Duración del vídeo (s)
+                  <HelpMark />
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  inputMode="numeric"
+                  value={duration ?? ""}
+                  placeholder="ej. 15"
+                  aria-label="Duración del vídeo en segundos"
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    onDuration(!e.target.value || !Number.isFinite(n) || n <= 0 ? null : n);
+                  }}
+                  className="mt-1 block min-h-11 w-28 rounded-xl border border-line bg-soft px-3 font-mono text-sm text-fg"
+                />
+              </label>
+            </Tip>
+          )}
+        </div>
+      </section>
+
+      <section aria-labelledby="interes-title">
+        <BlockHead
+          id="interes"
+          titleId="interes-title"
+          title="Interés"
+          lede="El clic ya salió. Aquí se ve quién espera a que cargue la landing y cuánto cuesta esa visita de verdad."
+        />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Kpi label="Clics en el enlace" value={fi(agg.clics)} hint={TIP.ctr} bar="bg-accent" />
+          <Kpi label="Visitas a la landing" value={fi(agg.vis)} hint={TIP.lpv} bar="bg-ok" />
+          <Kpi label="Carga LPV" value={fm(agg.lpv, "%")} hint={TIP.lpv} bar="bg-ok" tone={toneFor("lpv", agg.lpv)} />
+          <Kpi label="Fuga de carga" value={fm(agg.dropoff, "%")} hint={TIP.dropoff} bar="bg-gold" tone={toneFor("dropoff", agg.dropoff)} />
+          <Kpi label="CPC" value={fm(cpc, " €")} hint={TIP.cpc} bar="bg-logo" />
+          <Kpi label="Costo por visita" value={fm(cpv, " €")} hint={TIP.cpv} bar="bg-logo" />
+        </div>
+      </section>
+
+      <section aria-labelledby="compra-title">
+        <BlockHead
+          id="compra"
+          titleId="compra-title"
+          title="Compra"
+          lede="Dentro de la tienda: carrito, inicio de pago, compras, lo que cuesta cada una y el retorno del gasto."
+        />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Kpi label="Añadidos al carrito" value={fi(agg.atc)} hint={TIP.atcRate} bar="bg-accent" />
+          <Kpi label="Tasa de carrito" value={fm(atcRate, "%")} hint={TIP.atcRate} bar="bg-accent" />
+          <Kpi label="Inicios de pago" value={fi(agg.ic)} hint={TIP.intent} bar="bg-gold" />
+          <Kpi label="IC / ATC" value={fm(agg.intent, "%")} hint={TIP.intent} bar="bg-gold" tone={toneFor("intent", agg.intent)} />
+          <Kpi label="Compras" value={fi(agg.resultados)} hint={TIP.compras} bar="bg-ok" />
+          <Kpi label="CR global" value={fm(agg.cr, "%")} hint={TIP.cr} bar="bg-ok" tone={toneFor("cr", agg.cr)} />
+          <Kpi label="Gasto" value={`${f2(agg.gasto)} €`} hint={TIP.gasto} bar="bg-logo" />
+          <Kpi label="CPA" value={fm(agg.cpa, " €")} hint={TIP.cpa} bar="bg-accent" tone={toneFor("cpa", agg.cpa)} testId="kpi-cpa" />
+          <Kpi label="ROAS" value={fm(agg.roas, "x")} hint={agg.roasAdjusted ? `${TIP.roas} Este valor venía en porcentaje y ya está en multiplicador.` : TIP.roas} bar="bg-gold" tone={toneFor("roas", agg.roas)} testId="kpi-roas" />
+        </div>
+        <AiNote>{cut}</AiNote>
+      </section>
+    </div>
+  );
+}
+
+function flowCut(agg: Agg): string {
+  if (agg.clics <= 0 && agg.impr <= 0 && agg.gasto <= 0) return "Cuando haya impresiones y clics, aquí se señala si el corte está en el anuncio, en la carga o en la compra.";
+  if (agg.ctr != null && agg.ctr < 1.5) return "El CTR no llega al 1,50%. El corte está arriba: el anuncio no se gana el clic.";
+  if ((agg.dropoff != null && agg.dropoff > 30) || (agg.lpv != null && agg.lpv < 70)) return "El clic sale, pero la página no lo sostiene. El corte está en la velocidad o en la URL, no en el creativo.";
+  if (agg.atc != null && agg.atc > 0 && agg.resultados === 0) return "Hay carritos y no hay compras. El corte está en la oferta, el precio o la pasarela.";
+  if (agg.intent != null && agg.intent < 40) return "Se cae entre el carrito y el inicio de pago. Todavía no es el cobro: es el paso anterior.";
+  if (agg.payRate != null && agg.intent != null && agg.intent >= 55 && agg.payRate < 45) return "Llegan al pago y no compran. El corte está en el checkout: el formulario, la confianza o el método de pago.";
+  if (agg.cr != null && agg.cr < 1) return "La conversión global está por debajo del 1%. Ninguna fase sola explica el fallo: baja por el recorrido.";
+  return "Atracción, carga y compra no marcan un único corte. Si no escala, el límite está en el coste del clic o en el valor del pedido.";
+}
+
 function SiteBlock({
   account,
   ad,
@@ -1085,17 +1161,15 @@ function ReadRow({
 }
 
 function Funnel({ steps }: { steps: { label: string; value: number | null }[] }) {
-  const nums = steps.map((s) => s.value).filter((v): v is number => v != null && v > 0);
-  const max = Math.max(...nums, 1);
-  let prevWidth = 100;
-  const widths = steps.map((s, i) => {
-    const raw = s.value == null ? prevWidth : Math.max(52, (s.value / max) * 100);
-    const width = i === 0 ? 100 : Math.min(prevWidth, raw);
-    prevWidth = width;
-    return width;
+  const base = steps[0]?.value != null && steps[0].value > 0 ? steps[0].value : (steps.find((s) => s.value != null && s.value > 0)?.value ?? null);
+  let carry = 80;
+  const widths = steps.map((s) => {
+    if (base == null || base <= 0 || s.value == null) return carry;
+    carry = Math.min(80, Math.max(0, (s.value / base) * 80));
+    return carry;
   });
   return (
-    <ol className="mx-auto mt-4 flex max-w-md flex-col items-center">
+    <ol className="mt-4 flex w-full flex-col items-center">
       {steps.map((s, i) => {
         const prev = i > 0 ? steps[i - 1].value : null;
         const loss = s.value != null && prev != null && prev > 0 ? ((prev - s.value) / prev) * 100 : null;
@@ -1111,8 +1185,11 @@ function Funnel({ steps }: { steps: { label: string; value: number | null }[] })
                   {f2(Math.abs(loss))}%
                 </p>
               ))}
-            <div className={clsx("rounded-xl border px-2 py-2 text-center", funnelFace(i === 0 ? "src" : tone))} style={{ width: `${widths[i]}%` }}>
-              <p className="text-xs font-semibold leading-snug">{s.label}</p>
+            <div
+              className={clsx("rounded-xl border px-2 py-2 text-center", funnelFace(i === 0 ? "src" : tone))}
+              style={{ width: `clamp(8.75rem, ${widths[i]}%, 80%)` }}
+            >
+              <p className="text-xs font-semibold leading-snug text-balance">{s.label}</p>
               <p className="font-mono text-base font-bold tabular-nums">{s.value == null ? "—" : fi(s.value)}</p>
             </div>
           </li>

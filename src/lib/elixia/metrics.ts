@@ -427,7 +427,7 @@ export function intentRead(a: Agg): Read {
     return {
       tone: "n",
       title: "Faltan carrito e inicio de pago",
-      body: "Exporta «Añadidos al carrito» e «Inicios de pago». Sin esas columnas no se puede saber si la fricción está antes del checkout o en el recargo de 2,99 € contrareembolso.",
+      body: "Exporta «Añadidos al carrito» e «Inicios de pago». Sin esas columnas no se puede saber si la fricción está antes del checkout o en el último paso del pago.",
     };
   }
   if (a.atc === 0) {
@@ -439,20 +439,20 @@ export function intentRead(a: Agg): Read {
     return {
       tone: "r",
       title: "Fricción en el pago",
-      body: "El corte está en el checkout: recargo de 2,99 € contrareembolso, costes que aparecen tarde o desconfianza en el último paso.",
+      body: "El corte está en el checkout: el formulario, la confianza o un coste que todavía aparece en el último paso.",
     };
   }
   if (intent < 40) {
     return {
       tone: "r",
       title: "Fricción antes del pago",
-      body: "No es el recargo de 2,99 €: se cae entre el carrito y el checkout (envío, formulario o precio).",
+      body: "Se cae entre el carrito y el checkout: envío, formulario o precio, antes de pagar.",
     };
   }
   return {
     tone: rules.intent(intent),
     title: "La intención llega al pago",
-    body: pay != null && pay < 45 ? "Los inicios de pago no se están cobrando. Revisa el último paso del checkout." : "No hay un corte claro ligado al contrareembolso.",
+    body: pay != null && pay < 45 ? "Los inicios de pago no se están cobrando. Revisa el último paso del checkout." : "No hay un corte claro en el paso de pago.",
   };
 }
 
@@ -532,6 +532,6 @@ export const LEGEND: { name: string; rule: string }[] = [
   { name: "Hold rate", rule: "retención final (100%, si no 95%, ThruPlay o 75%) ÷ visualizaciones de 3 s. Verde ≥ 35% · amarillo 20–34,9% · rojo < 20%." },
   { name: "Tiempo medio", rule: "verde ≥ 5 s · amarillo 3–4,9 s · rojo < 3 s." },
   { name: "Visto del vídeo", rule: "tiempo medio ÷ duración. Verde ≥ 40% · amarillo 25–39,9% · rojo < 25%. Usa la duración del informe o la que indiques." },
-  { name: "Intención IC/ATC", rule: "inicios de pago ÷ añadidos al carrito. Si es alta y compras/inicios es baja, la fricción está en el pago (por ejemplo el recargo de 2,99 €). Si es baja, está antes del checkout." },
+  { name: "Intención IC/ATC", rule: "inicios de pago ÷ añadidos al carrito. Si es alta y compras/inicios es baja, la fricción está en el último paso del checkout. Si es baja, está antes de pagar." },
   { name: "Acumulado", rule: "sumas, no medias de porcentajes. Los informes que se solapan en fechas se excluyen para no duplicar gasto. El alcance es suma de alcances diarios, no alcance único." },
 ];

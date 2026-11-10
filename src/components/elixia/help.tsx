@@ -86,11 +86,16 @@ export const TIP = {
   edad: "Días desde la fecha de creación del anuncio hasta el último informe, junto a la frecuencia. Un anuncio nuevo con frecuencia baja no está fatigado.",
   cr: "Conversión global: compras ÷ clics en el enlace. La referencia sana es 1–1,5%. Por debajo de 1% queda en rojo.",
   dropoff: "Clics que no llegan a la landing. Verde ≤ 15%, amarillo hasta 30%, por encima es fuga crítica.",
-  intent: "Inicios de pago ÷ añadidos al carrito. Si es alto y casi nadie compra, la fricción está en el pago (el recargo de 2,99 €). Si es bajo, se cae antes del checkout.",
+  intent: "Inicios de pago ÷ añadidos al carrito. Si es alto y casi nadie compra, la fricción está en el último paso del checkout. Si es bajo, se cae antes de llegar a pagar.",
   fecha: "Día o rango de ese informe de Meta. Cada fila es un periodo de este anuncio.",
-  navCuenta: "Bloque 1. El resultado de toda la cuenta: gasto, compras, CPA y ROAS.",
-  navCreativos: "Bloque 2. Cada anuncio, su histórico, el vídeo y si toca escalar o apagar.",
-  navSitio: "Bloque 3. La landing: fuga de clics, conversión y fricción del carrito al pago.",
+  navCuenta: "Atracción. Impresiones, alcance, CTR y si el vídeo pasa de los 3 segundos.",
+  navCreativos: "El anuncio elegido: veredicto, señales, histórico y evolución.",
+  navSitio: "Interés y compra. Carga de la landing, carrito, pago y retorno.",
+  impr: "Veces que se mostró el anuncio. El alcance es cuántas personas distintas lo vieron.",
+  cpc: "Gasto ÷ clics en el enlace. Es el coste del clic, no el de quien espera a que cargue la página.",
+  cpv: "Gasto ÷ visitas a la landing. Lo que cuesta una persona que sí esperó la carga.",
+  atcRate: "Añadidos al carrito ÷ visitas a la landing. De quienes pisan la web, cuántos muestran intención de compra.",
+  fases: "Si el CTR flojea, el fallo es el anuncio. Si la carga se cae, es la página. Si hay carritos y no hay compras, es la oferta o el pago.",
 } as const;
 
 export function Tip({ text, children, block, className }: { text: string; children: ReactNode; block?: boolean; className?: string }) {
